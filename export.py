@@ -105,7 +105,7 @@ def export(dataset, pipe, iteration):
     pcd.normals = o3d.utility.Vector3dVector(normals.cpu().numpy())
     # pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=20, std_ratio=10)
     with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm:
-        mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=13)
+        mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=10)
     vertices_to_remove = densities < np.quantile(densities, 0.05)
     mesh.remove_vertices_by_mask(vertices_to_remove)
     print("\nSaving Poisson Mesh")
