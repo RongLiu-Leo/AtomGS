@@ -1,4 +1,4 @@
 build/
-diff_gaussian_rasterization.egg-info/
+*.egg-info/
 dist/
-.idea/
+__pycache__/

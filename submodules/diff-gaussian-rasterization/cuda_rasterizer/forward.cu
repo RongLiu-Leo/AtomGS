@@ -266,12 +266,12 @@ renderCUDA(
 	int W, int H,
 	const float2* __restrict__ points_xy_image,
 	const float* __restrict__ features,
+	const float* __restrict__ depths,
 	const float4* __restrict__ conic_opacity,
-	float* __restrict__ final_T,
+	float* __restrict__ out_alpha,
 	uint32_t* __restrict__ n_contrib,
 	const float* __restrict__ bg_color,
 	float* __restrict__ out_color,
-	const float* __restrict__ depth,
 	float* __restrict__ out_depth)
 {
 	// Identify current tile and associated min/max pixel range.
@@ -297,15 +297,13 @@ renderCUDA(
 	__shared__ int collected_id[BLOCK_SIZE];
 	__shared__ float2 collected_xy[BLOCK_SIZE];
 	__shared__ float4 collected_conic_opacity[BLOCK_SIZE];
-	__shared__ float collected_depth[BLOCK_SIZE];
 
 	// Initialize helper variables
 	float T = 1.0f;
 	uint32_t contributor = 0;
 	uint32_t last_contributor = 0;
 	float C[CHANNELS] = { 0 };
-// 	float D = 0.0f;  // Mean Depth
-    float D = 15.0f;  // Median Depth. TODO: This is a hack setting max_depth to 15
+	float D = 0;
 
 	// Iterate over batches until all done or range is complete
 	for (int i = 0; i < rounds; i++, toDo -= BLOCK_SIZE)
@@ -323,7 +321,6 @@ renderCUDA(
 			collected_id[block.thread_rank()] = coll_id;
 			collected_xy[block.thread_rank()] = points_xy_image[coll_id];
 			collected_conic_opacity[block.thread_rank()] = conic_opacity[coll_id];
-			collected_depth[block.thread_rank()] = depth[coll_id];
 		}
 		block.sync();
 
@@ -359,19 +356,7 @@ renderCUDA(
 			// Eq. (3) from 3D Gaussian splatting paper.
 			for (int ch = 0; ch < CHANNELS; ch++)
 				C[ch] += features[collected_id[j] * CHANNELS + ch] * alpha * T;
-
-            // Mean depth:
-//             float dep = collected_depth[j];
-//             D += dep * alpha * T;
-
-            // Median depth:
-            if (T > 0.5f && test_T < 0.5)
-			{
-			    float dep = collected_depth[j];
-				D = dep;
-			}
-
-
+			D += depths[collected_id[j]] * alpha * T;
 			T = test_T;
 
 			// Keep track of last range entry to update this
@@ -384,7 +369,7 @@ renderCUDA(
 	// rendering data to the frame and auxiliary buffers.
 	if (inside)
 	{
-		final_T[pix_id] = T;
+		out_alpha[pix_id] = 1 - T;
 		n_contrib[pix_id] = last_contributor;
 		for (int ch = 0; ch < CHANNELS; ch++)
 			out_color[ch * H * W + pix_id] = C[ch] + T * bg_color[ch];
@@ -399,12 +384,12 @@ void FORWARD::render(
 	int W, int H,
 	const float2* means2D,
 	const float* colors,
+	const float* depths,
 	const float4* conic_opacity,
-	float* final_T,
+	float* out_alpha,
 	uint32_t* n_contrib,
 	const float* bg_color,
 	float* out_color,
-	const float* depth,
 	float* out_depth)
 {
 	renderCUDA<NUM_CHANNELS> << <grid, block >> > (
@@ -413,12 +398,12 @@ void FORWARD::render(
 		W, H,
 		means2D,
 		colors,
+		depths,
 		conic_opacity,
-		final_T,
+		out_alpha,
 		n_contrib,
 		bg_color,
 		out_color,
-		depth,
 		out_depth);
 }
 
