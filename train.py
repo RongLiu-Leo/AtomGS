@@ -12,7 +12,7 @@
 import os
 import torch
 from random import randint
-from utils.loss_utils import l1_loss, ssim
+from utils.loss_utils import l1_loss, ssim, ege_aware_depth_loss, entropy_loss
 from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
@@ -22,6 +22,8 @@ from tqdm import tqdm
 from utils.image_utils import psnr
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
+from simple_knn._C import distCUDA2
+
 try:
     from torch.utils.tensorboard import SummaryWriter
     TENSORBOARD_FOUND = True
@@ -85,11 +87,17 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         render_pkg = render(viewpoint_cam, gaussians, pipe, bg)
         image, depth, alpha, viewspace_point_tensor, visibility_filter = render_pkg["render"], render_pkg["depth"], render_pkg["alpha"], render_pkg["viewspace_points"], render_pkg["visibility_filter"]
-
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
-        loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
+        Lrgb = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
+
+        loss = Lrgb
+        # if 4500<iteration:
+        #     Lent = entropy_loss(alpha)
+        #     loss += Lent
+        #     Ldep = ege_aware_depth_loss(gt_image, depth)
+        #     loss += Ldep
         loss.backward()
 
         iter_end.record()
@@ -98,6 +106,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             # Progress bar
             ema_loss_for_log = 0.4 * loss.item() + 0.6 * ema_loss_for_log
             if iteration % 10 == 0:
+                # progress_bar.set_postfix({"Lrgb": f"{Lrgb:.{4}f}", "Lent": f"{Lent:.{4}f}", "Ldep": f"{Ldep:.{4}f}", "#": f"{gaussians.get_opacity.shape[0]}"})
                 progress_bar.set_postfix({"Loss": f"{ema_loss_for_log:.{7}f}", "#": f"{gaussians.get_opacity.shape[0]}"})
                 progress_bar.update(10)
             if iteration == opt.iterations:
@@ -116,18 +125,20 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
                     gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
 
-                if iteration % opt.scaling_reset_iteration==0:
+                if iteration in opt.scaling_reset_iteration:
                     gaussians.reset_scaling()
                 
                 if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
                     gaussians.reset_opacity()
             
-            if iteration == opt.scaling_enable_iteration:
-                print('Enbale scaling')
-                for param_group in gaussians.optimizer.param_groups:
-                    if param_group["name"] == "scaling":
-                        param_group['lr'] = 0.005
-
+            # if iteration == opt.scaling_enable_iteration:
+            #     print('Enbale scaling')
+            #     dist2 = torch.clip(distCUDA2(gaussians.get_xyz), 0.0000001, scene.cameras_extent)
+            #     scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)
+            #     for param_group in gaussians.optimizer.param_groups:
+            #         if param_group["name"] == "scaling":
+            #             param_group['lr'] = 0.005
+            #             param_group['params'] = [scales.requires_grad_(True)]            
 
             # Optimizer step
             if iteration < opt.iterations:
@@ -140,11 +151,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
 def prepare_output_and_logger(args):    
     if not args.model_path:
-        # if os.getenv('OAR_JOB_ID'):
-        #     unique_str=os.getenv('OAR_JOB_ID')
-        # else:
-        #     unique_str = str(uuid.uuid4())
-        # args.model_path = os.path.join("./output/", unique_str[0:10])
         args.model_path = os.path.join("./output/", os.path.basename(args.source_path))
         
     # Set up output folder

@@ -14,6 +14,28 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from math import exp
 
+def entropy_loss(P):
+    criterion = torch.nn.BCELoss()
+    loss = criterion(P, P)
+    return loss
+
+def ege_aware_depth_loss(I, D):
+    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
+    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
+
+    dD_dx = F.conv2d(D, sobel_x, padding=1)
+    dD_dy = F.conv2d(D, sobel_y, padding=1)
+
+    dI_dx = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_x, padding=1) for i in range(I.shape[0])])
+    dI_dy = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_y, padding=1) for i in range(I.shape[0])])
+    weights_x = torch.exp(-torch.mean(torch.abs(dI_dx), 0, keepdim=True))
+    weights_y = torch.exp(-torch.mean(torch.abs(dI_dy), 0, keepdim=True))
+
+    loss_x = abs(dD_dx) * weights_x
+    loss_y = abs(dD_dy) * weights_y
+
+    return loss_x.mean() + loss_y.mean()
+
 def l1_loss(network_output, gt):
     return torch.abs((network_output - gt)).mean()
 
