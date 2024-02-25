@@ -17,7 +17,6 @@ from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
-import uuid
 from tqdm import tqdm
 from utils.image_utils import psnr
 from argparse import ArgumentParser, Namespace
@@ -42,6 +41,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
+
+    scale_decay = opt.scaling_decay_ratio ** (opt.densification_interval / opt.scaling_enable_iteration)
 
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
@@ -90,14 +91,17 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
-        Lrgb = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * (1.0 - ssim(image, gt_image))
+        Lssim = (1.0 - ssim(image, gt_image))
+        lambda_dssim = iteration / opt.iterations
+        Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
 
         loss = Lrgb
-        # if 4500<iteration:
-        #     Lent = entropy_loss(alpha)
-        #     loss += Lent
-        #     Ldep = ege_aware_depth_loss(gt_image, depth)
-        #     loss += Ldep
+        if iteration > opt.scaling_enable_iteration:
+            Lent = entropy_loss(alpha)
+            loss += Lent
+            Ldep = ege_aware_depth_loss(gt_image, depth)
+            loss += 0.1 * Ldep
+            # loss += torch.relu(gaussians.get_scaling - 0.001 * scene.cameras_extent).mean()
         loss.backward()
 
         iter_end.record()
@@ -113,7 +117,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 progress_bar.close()
 
             # Log and save
-            training_report(tb_writer, iteration, Ll1, loss, l1_loss, iter_start.elapsed_time(iter_end), testing_iterations, scene, render, (pipe, background))
+            training_report(tb_writer, iteration, loss, l1_loss, iter_start.elapsed_time(iter_end), testing_iterations, scene, render, (pipe, background))
             if (iteration in saving_iterations):
                 print("\n[ITER {}] Saving Gaussians".format(iteration))
                 scene.save(iteration)
@@ -125,20 +129,21 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
                     gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
 
-                if iteration in opt.scaling_reset_iteration:
-                    gaussians.reset_scaling()
+                if  iteration % opt.densification_interval == 0 and iteration < opt.scaling_enable_iteration:
+                    gaussians.reset_scaling(scale_decay)
                 
-                if iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter):
+                if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.scaling_enable_iteration:
                     gaussians.reset_opacity()
             
-            # if iteration == opt.scaling_enable_iteration:
-            #     print('Enbale scaling')
-            #     dist2 = torch.clip(distCUDA2(gaussians.get_xyz), 0.0000001, scene.cameras_extent)
-            #     scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)
-            #     for param_group in gaussians.optimizer.param_groups:
-            #         if param_group["name"] == "scaling":
-            #             param_group['lr'] = 0.005
-            #             param_group['params'] = [scales.requires_grad_(True)]            
+            if iteration == opt.scaling_enable_iteration:
+                print('Enbale scaling')
+                opt.densify_grad_threshold = 0.9
+                # dist2 = torch.clip(distCUDA2(gaussians.get_xyz), 0.0000001, scene.cameras_extent)
+                # scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)
+                for param_group in gaussians.optimizer.param_groups:
+                    if param_group["name"] == "scaling":
+                        param_group['lr'] = 0.005
+                        # param_group['params'] = [scales.requires_grad_(True)]   
 
             # Optimizer step
             if iteration < opt.iterations:
@@ -167,9 +172,8 @@ def prepare_output_and_logger(args):
         print("Tensorboard not available: not logging progress")
     return tb_writer
 
-def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, scene : Scene, renderFunc, renderArgs):
+def training_report(tb_writer, iteration, loss, l1_loss, elapsed, testing_iterations, scene : Scene, renderFunc, renderArgs):
     if tb_writer:
-        tb_writer.add_scalar('train_loss_patches/l1_loss', Ll1.item(), iteration)
         tb_writer.add_scalar('train_loss_patches/total_loss', loss.item(), iteration)
         tb_writer.add_scalar('iter_time', elapsed, iteration)
 
