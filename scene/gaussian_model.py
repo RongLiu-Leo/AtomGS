@@ -126,8 +126,7 @@ class GaussianModel:
 
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
 
-        dist = torch.ones((fused_point_cloud.shape[0]), device="cuda")[...,None].repeat(1, 3) * 0.001 * spatial_lr_scale
-        # dist[:,2] *= 1e-6
+        dist = torch.ones((fused_point_cloud.shape[0]), device="cuda")[...,None].repeat(1, 3) * 0.002 * spatial_lr_scale
         scales = torch.log(dist)
         rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
         rots[:, 0] = 1
@@ -203,8 +202,8 @@ class GaussianModel:
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
         self._opacity = optimizable_tensors["opacity"]
     
-    def reset_scaling(self):
-        scaling_new = torch.log(torch.exp(self._scaling)*0.8)
+    def reset_scaling(self, decay):
+        scaling_new = torch.log(torch.exp(self._scaling) * decay)
         optimizable_tensors = self.replace_tensor_to_optimizer(scaling_new, "scaling")
         self._scaling = optimizable_tensors["scaling"]
 
