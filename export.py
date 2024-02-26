@@ -10,7 +10,7 @@ from tqdm import tqdm
 import numpy as np
 import open3d as o3d
 import matplotlib.pyplot as plt
-from utils.image_utils import compute_normal_map, unproject_depth_map
+from utils.image_utils import depth_to_normal, unproject_depth_map
 
 def export(dataset, pipe, iteration, downsample):
     gaussians = GaussianModel(dataset.sh_degree)
@@ -28,9 +28,9 @@ def export(dataset, pipe, iteration, downsample):
         for i in tqdm(range(len(cameras))):
             render_pkg = render(cameras[i], gaussians, pipe, background)
             image, depth = render_pkg["render"].permute(1,2,0), render_pkg["median_depth"]
-            normal = compute_normal_map(depth).permute(1,2,0)
+            normal = depth_to_normal(depth, cameras[i].world_view_transform[:3, :3].T).permute(1,2,0)
             depth = depth.squeeze()
-            normal = torch.matmul(normal, cameras[i].world_view_transform[:3, :3].T)
+            # normal = torch.matmul(normal, )
 
             mask = depth>0
 
