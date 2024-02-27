@@ -28,9 +28,9 @@ def export(dataset, pipe, iteration, downsample):
         for i in tqdm(range(len(cameras))):
             render_pkg = render(cameras[i], gaussians, pipe, background)
             image, depth = render_pkg["render"].permute(1,2,0), render_pkg["median_depth"]
-            normal = depth_to_normal(depth, cameras[i].world_view_transform[:3, :3].T).permute(1,2,0)
+            normal = depth_to_normal(depth).permute(1,2,0)
+            normal = torch.matmul(normal, cameras[i].world_view_transform[:3, :3].T)
             depth = depth.squeeze()
-            # normal = torch.matmul(normal, )
 
             mask = depth>0
 
@@ -43,7 +43,6 @@ def export(dataset, pipe, iteration, downsample):
             points = torch.cat((points, point[indices]), dim=0)
             colors = torch.cat((colors, color[indices]), dim=0)
             normals = torch.cat((normals, normal[indices]), dim=0)
-            # break
     
     
     pcd.points = o3d.utility.Vector3dVector(points.cpu().numpy())

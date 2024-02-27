@@ -66,13 +66,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     if custom_cam != None:
                         render_pkg = render(custom_cam, gaussians, pipe, background, scaling_modifer)   
                         if render_mode == 1:
-                            net_image = render_pkg["depth"]
+                            net_image = render_pkg["alpha"]
                             net_image = (net_image - net_image.min()) / (net_image.max() - net_image.min())
                         elif render_mode == 2:
-                            net_image = render_pkg["median_depth"]
+                            net_image = render_pkg["depth"]
                             net_image = (net_image - net_image.min()) / (net_image.max() - net_image.min())
                         elif render_mode == 3:
-                            net_image = depth_to_normal(render_pkg["depth"], viewpoint_cam.world_view_transform[:3, :3].T)
+                            net_image = depth_to_normal(render_pkg["mean_depth"]) * torch.tensor([1.,1.,-1.]).view((3,1,1)).to(render_pkg["mean_depth"].device)
                             net_image = (net_image+1)/2
                         else:
                             net_image = render_pkg["render"]
@@ -107,6 +107,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         Ll1 = l1_loss(image, gt_image)
         Lssim = (1.0 - ssim(image, gt_image))
         lambda_dssim = iteration / opt.iterations
+        # lambda_dssim = 1.
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
 
         loss = Lrgb
@@ -115,7 +116,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             loss += Lent
             Ldep = ege_aware_depth_loss(gt_image, depth)
             loss += 0.1 * Ldep
-            # loss += torch.relu(gaussians.get_scaling - 0.001 * scene.cameras_extent).mean()
         loss.backward()
 
         iter_end.record()
