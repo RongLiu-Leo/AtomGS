@@ -11,7 +11,6 @@
 
 import torch
 import matplotlib.pyplot as plt
-from kornia.geometry.depth import depth_to_normals
 
 def mse(img1, img2):
     return (((img1 - img2)) ** 2).view(img1.shape[0], -1).mean(1, keepdim=True)
@@ -82,11 +81,8 @@ def colormap(map, cmap="magma"):
     end_color = torch.tensor(colors[-1]).view(3, 1, 1).to(map.device)
     return (1 - map) * start_color + map * end_color
 
-def render_net_image(render_pkg, render_items, render_mode):
-    render_support = ['rgb', 'depth', 'alpha', 'normal']
+def render_net_image(render_pkg, render_items, render_mode, background):
     output = render_items[render_mode]
-    if output not in render_support:
-        raise NotImplementedError(f'Render {output} not implemented yet.')
     if output == 'alpha':
         net_image = render_pkg["alpha"]
         net_image = (net_image - net_image.min()) / (net_image.max() - net_image.min())
@@ -96,6 +92,9 @@ def render_net_image(render_pkg, render_items, render_mode):
     elif output == 'normal':
         net_image = depth_to_normal(render_pkg["mean_depth"]) * torch.tensor([1.,1.,-1.]).view((3,1,1)).to(render_pkg["mean_depth"].device)
         net_image = (net_image+1)/2
+        net_image = render_pkg["alpha"] * net_image + (1 - render_pkg["alpha"]) * background[...,None,None]
+    elif output == 'pre_normal':
+        net_image = render_pkg["normal"]
     else:
         net_image = render_pkg["render"]
     if net_image.shape[0]==1:

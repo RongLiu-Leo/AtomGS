@@ -12,13 +12,13 @@
 import os
 import torch
 from random import randint
-from utils.loss_utils import l1_loss, ssim, ege_aware_depth_loss, entropy_loss
+from utils.loss_utils import l1_loss, ssim, ege_aware_depth_loss, entropy_loss, l2_loss
 from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
 from tqdm import tqdm
-from utils.image_utils import psnr, render_net_image
+from utils.image_utils import psnr, render_net_image, depth_to_normal
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
 
@@ -65,13 +65,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     custom_cam, do_training, pipe.convert_SHs_python, pipe.compute_cov3D_python, keep_alive, scaling_modifer, render_mode = network_gui.receive()
                     if custom_cam != None:
                         render_pkg = render(custom_cam, gaussians, pipe, background, scaling_modifer)   
-                        net_image = render_net_image(render_pkg, render_items, render_mode)
+                        net_image = render_net_image(render_pkg, render_items, render_mode, background)
                         net_image_bytes = memoryview((torch.clamp(net_image, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy())
                     network_gui.send(net_image_bytes, dataset.source_path)
                     if do_training and ((iteration < int(opt.iterations)) or not keep_alive):
                         break
                 except Exception as e:
-                    # raise e
+                    raise e
                     network_gui.conn = None
 
         iter_start.record()
@@ -87,7 +87,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             pipe.debug = True
 
         bg = torch.rand((3), device="cuda") if opt.random_background else background
-
         render_pkg = render(viewpoint_cam, gaussians, pipe, bg)
         image, depth, alpha, viewspace_point_tensor, visibility_filter = render_pkg["render"], render_pkg["mean_depth"], render_pkg["alpha"], render_pkg["viewspace_points"], render_pkg["visibility_filter"]
         # Loss
@@ -97,9 +96,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         lambda_dssim = iteration / opt.iterations
         # lambda_dssim = 1.
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
-
         loss = Lrgb
+        # depth_normal = render_net_image(render_pkg, render_items, render_items.index('normal'), background)
+        # pre_normal = render_net_image(render_pkg, render_items, render_items.index('pre_normal'), background)
+        # Lnormal = l2_loss(depth_normal, pre_normal)
+        # loss += Lnormal
+
         if iteration > opt.scaling_enable_iteration:
+            
             Lent = entropy_loss(alpha)
             loss += Lent
             Ldep = ege_aware_depth_loss(gt_image, depth)
@@ -140,8 +144,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if iteration == opt.scaling_enable_iteration:
                 print('Enbale scaling')
                 opt.densify_grad_threshold = 0.9
-                # dist2 = torch.clip(distCUDA2(gaussians.get_xyz), 0.0000001, scene.cameras_extent)
-                # scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)
                 for param_group in gaussians.optimizer.param_groups:
                     if param_group["name"] == "scaling":
                         param_group['lr'] = 0.005
@@ -225,7 +227,6 @@ if __name__ == "__main__":
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
     parser.add_argument("--start_checkpoint", type=str, default = None)
-    parser.add_argument("--extra_output", type=str, default = ['normal'])
     args = parser.parse_args(sys.argv[1:])
     args.save_iterations.append(args.iterations)
     
@@ -237,8 +238,7 @@ if __name__ == "__main__":
     # Start GUI server, configure and run training
     network_gui.init(args.ip, args.port)
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
-    render_items = ['rgb', 'alpha', 'depth']
-    render_items.extend(args.extra_output)
+    render_items = ['rgb', 'alpha', 'depth', 'normal', 'pre_normal']
     training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from, render_items)
 
     # All done
