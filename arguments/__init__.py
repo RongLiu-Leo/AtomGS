@@ -53,6 +53,7 @@ class ModelParams(ParamGroup):
         self._resolution = 1
         self._white_background = False
         self.data_device = "cuda"
+        self.particle_resolution = 0.003
         self.eval = False
         super().__init__(parser, "Loading Parameters", sentinel)
 
@@ -71,21 +72,20 @@ class PipelineParams(ParamGroup):
 class OptimizationParams(ParamGroup):
     def __init__(self, parser):
         self.iterations = 7000
-        self.position_lr_init = 0.00016
-        self.position_lr_final = 0.0000016
+        self.position_lr_init = 0.0005
+        self.position_lr_final = 0.000005
         self.position_lr_delay_mult = 0.01
         self.position_lr_max_steps = self.iterations
         self.feature_lr = 0.0025
         self.opacity_lr = 0.05
         self.scaling_lr = 0.00
-        self.rotation_lr = 0.001
+        self.rotation_lr = 0.01
 
         self.densification_interval = 100
-        self.scaling_decay_ratio = 0.1
-        self.scaling_enable_iteration = self.iterations/4*3
+        self.scaling_enable_iteration = self.iterations/2
         self.densify_from_iter = 500
         self.densify_until_iter = self.iterations/10*9
-        self.opacity_reset_interval = (self.scaling_enable_iteration - self.densify_from_iter)/3
+        self.opacity_reset_interval = 500
 
         self.prune_opacity_threshold = 0.5
         self.densify_grad_threshold = 0.0002

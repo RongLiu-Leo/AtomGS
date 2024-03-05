@@ -19,7 +19,7 @@ def entropy_loss(P):
     loss = criterion(P, P)
     return loss
 
-def ege_aware_depth_loss(I, D):
+def edge_aware_depth_loss(I, D):
     sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
     sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
 

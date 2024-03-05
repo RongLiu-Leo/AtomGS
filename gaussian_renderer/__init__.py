@@ -92,18 +92,7 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         rotations = rotations,
         cov3D_precomp = cov3D_precomp
     )
-    normals = rasterizer(
-        means3D = means3D,
-        means2D = means2D,
-        shs = None,
-        colors_precomp = 0.5*pc.get_normals+0.5,
-        opacities = opacity,
-        scales = scales,
-        rotations = rotations,
-        cov3D_precomp = cov3D_precomp
-    )[0]
-    # print(normals)
-    # raise
+
     # Those Gaussians that were frustum culled or had a radius of 0 were not visible.
     # They will be excluded from value updates used in the splitting criteria.
     return {"render": rendered_image,
@@ -112,5 +101,4 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
             "radii": radii,
             "mean_depth": rendered_depth,
             "median_depth": rendered_median_depth,
-            "alpha": rendered_alpha,
-            "normal": normals}
+            "alpha": rendered_alpha}

@@ -42,7 +42,7 @@ class GaussianModel:
 
     def __init__(self, sh_degree : int):
         self.active_sh_degree = 0
-        self.max_sh_degree = sh_degree  
+        self.max_sh_degree = sh_degree
         self._xyz = torch.empty(0)
         self._features_dc = torch.empty(0)
         self._features_rest = torch.empty(0)
@@ -53,6 +53,7 @@ class GaussianModel:
         self.denom = torch.empty(0)
         self.optimizer = None
         self.spatial_lr_scale = 0
+        self.particle_resolution = 0
         self.setup_functions()
 
     def capture(self):
@@ -116,7 +117,8 @@ class GaussianModel:
         if self.active_sh_degree < self.max_sh_degree:
             self.active_sh_degree += 1
 
-    def create_from_pcd(self, pcd : BasicPointCloud, spatial_lr_scale : float):
+    def create_from_pcd(self, pcd : BasicPointCloud, particle_resolution : float, spatial_lr_scale : float):
+        self.particle_resolution = particle_resolution
         self.spatial_lr_scale = spatial_lr_scale
         fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
         fused_color = RGB2SH(torch.tensor(np.asarray(pcd.colors)).float().cuda())
@@ -126,7 +128,7 @@ class GaussianModel:
 
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
 
-        dist = torch.ones((fused_point_cloud.shape[0]), device="cuda")[...,None].repeat(1, 3) * 0.002 * spatial_lr_scale
+        dist = torch.ones((fused_point_cloud.shape[0]), device="cuda")[...,None].repeat(1, 3) * self.particle_resolution * self.spatial_lr_scale
         scales = torch.log(dist)
         rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
         rots[:, 0] = 1
@@ -203,7 +205,10 @@ class GaussianModel:
         self._opacity = optimizable_tensors["opacity"]
     
     def reset_scaling(self, decay):
-        scaling_new = torch.log(torch.exp(self._scaling) * decay)
+        self.particle_resolution *= decay 
+        dist = torch.ones((self.get_scaling.shape[0]), device="cuda")[...,None].repeat(1, 3) * self.particle_resolution * self.spatial_lr_scale
+        scaling_new = torch.log(dist)
+        # scaling_new = torch.log(torch.exp(self._scaling) * decay)
         optimizable_tensors = self.replace_tensor_to_optimizer(scaling_new, "scaling")
         self._scaling = optimizable_tensors["scaling"]
 
@@ -351,12 +356,35 @@ class GaussianModel:
 
         self.densification_postfix(new_xyz, new_features_dc, new_features_rest, new_opacities, new_scaling, new_rotation)
 
+    def split_points(self, split_mask, N=2):
+        selected_pts_mask = split_mask
+        stds = self.get_scaling[selected_pts_mask].repeat(N,1)
+        means =torch.zeros((stds.size(0), 3),device="cuda")
+        samples = torch.normal(mean=means, std=stds)
+        rots = build_rotation(self._rotation[selected_pts_mask]).repeat(N,1,1)
+        new_xyz = torch.bmm(rots, samples.unsqueeze(-1)).squeeze(-1) + self.get_xyz[selected_pts_mask].repeat(N, 1)
+        new_scaling = self.scaling_inverse_activation(self.get_scaling[selected_pts_mask].repeat(N,1) / (0.5*N))
+        new_rotation = self._rotation[selected_pts_mask].repeat(N,1)
+        new_features_dc = self._features_dc[selected_pts_mask].repeat(N,1,1)
+        new_features_rest = self._features_rest[selected_pts_mask].repeat(N,1,1)
+        new_opacity = self._opacity[selected_pts_mask].repeat(N,1)
+
+        self.densification_postfix(new_xyz, new_features_dc, new_features_rest, new_opacity, new_scaling, new_rotation)
+
+        prune_filter = torch.cat((selected_pts_mask, torch.zeros(N * selected_pts_mask.sum(), device="cuda", dtype=bool)))
+        self.prune_points(prune_filter)
+
     def densify_and_prune(self, max_grad, min_opacity):
         grads = self.xyz_gradient_accum / self.denom
         grads[grads.isnan()] = 0.0
 
-        clone_mask = torch.where(torch.norm(grads, dim=-1) >= max_grad, True, False)
+        clone_mask = torch.norm(grads, dim=-1) >= max_grad
         self.clone_points(clone_mask)
+
+        # split_mask = torch.max(self.get_scaling, dim=1).values > self.particle_resolution * self.spatial_lr_scale
+        # if split_mask.sum()>0:
+        #     print('\n split\n', torch.max(self.get_scaling, dim=1).values, self.particle_resolution * self.spatial_lr_scale)
+        # self.split_points(clone_mask)
 
         prune_mask = (self.get_opacity < min_opacity).squeeze()
         self.prune_points(prune_mask)

@@ -12,7 +12,7 @@
 import os
 import torch
 from random import randint
-from utils.loss_utils import l1_loss, ssim, ege_aware_depth_loss, entropy_loss, l2_loss
+from utils.loss_utils import l1_loss, ssim, edge_aware_depth_loss, entropy_loss, l2_loss
 from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
@@ -41,7 +41,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
-    scale_decay = opt.scaling_decay_ratio ** (opt.densification_interval / opt.scaling_enable_iteration)
+    scale_decay = 0.1 ** (opt.densification_interval / opt.scaling_enable_iteration)
 
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
@@ -65,7 +65,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     custom_cam, do_training, pipe.convert_SHs_python, pipe.compute_cov3D_python, keep_alive, scaling_modifer, render_mode = network_gui.receive()
                     if custom_cam != None:
                         render_pkg = render(custom_cam, gaussians, pipe, background, scaling_modifer)   
-                        net_image = render_net_image(render_pkg, render_items, render_mode, background)
+                        net_image = render_net_image(render_pkg, render_items, render_mode, custom_cam)
                         net_image_bytes = memoryview((torch.clamp(net_image, min=0, max=1.0) * 255).byte().permute(1, 2, 0).contiguous().cpu().numpy())
                     network_gui.send(net_image_bytes, dataset.source_path)
                     if do_training and ((iteration < int(opt.iterations)) or not keep_alive):
@@ -93,21 +93,33 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
         Lssim = (1.0 - ssim(image, gt_image))
+        # lambda_dssim = iteration / opt.scaling_enable_iteration + 0.5
         lambda_dssim = iteration / opt.iterations
-        # lambda_dssim = 1.
+        
+        # lambda_dssim = 0.
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
         loss = Lrgb
-        # depth_normal = render_net_image(render_pkg, render_items, render_items.index('normal'), background)
-        # pre_normal = render_net_image(render_pkg, render_items, render_items.index('pre_normal'), background)
-        # Lnormal = l2_loss(depth_normal, pre_normal)
-        # loss += Lnormal
+        # depth_normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam)
+        # pre_normal = render_pkg['normal'].permute(1,2,0)
+        # Lnormal = -torch.bmm(depth_normal.view(-1, 1,3), pre_normal.view((-1, 3,1))).mean()
+        # loss += 0.001*Lnormal
+        
+        
+        
+        
 
-        if iteration > opt.scaling_enable_iteration:
-            
-            Lent = entropy_loss(alpha)
-            loss += Lent
-            Ldep = ege_aware_depth_loss(gt_image, depth)
-            loss += 0.1 * Ldep
+        # if iteration > opt.scaling_enable_iteration:
+        #     Ldep = edge_aware_depth_loss(gt_image, depth)
+        #     loss += Ldep
+            # depth_normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1)
+            # pre_normal = render_pkg['normal']
+            # Lnormal = l2_loss(depth_normal, pre_normal)
+            # depth_normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam)
+            # pre_normal = render_pkg['normal'].permute(1,2,0)
+            # Lnormal = -torch.bmm(depth_normal.view(-1, 1,3), pre_normal.view((-1, 3,1))).mean()
+            # loss += 0.001*Lnormal
+            # Lent = entropy_loss(alpha)
+            # loss += Lent            
         loss.backward()
 
         iter_end.record()
@@ -133,22 +145,24 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
+                    if loss > 0.01 and iteration < opt.scaling_enable_iteration/2:
+                        print('blind densify')
+                        gaussians.densify_and_prune(0., opt.prune_opacity_threshold)
+                    else:
+                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
 
                 if  iteration % opt.densification_interval == 0 and iteration < opt.scaling_enable_iteration:
                     gaussians.reset_scaling(scale_decay)
                 
                 if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.scaling_enable_iteration:
                     gaussians.reset_opacity()
-            
-            if iteration == opt.scaling_enable_iteration:
-                print('Enbale scaling')
-                opt.densify_grad_threshold = 0.9
-                for param_group in gaussians.optimizer.param_groups:
-                    if param_group["name"] == "scaling":
-                        param_group['lr'] = 0.005
-                        # param_group['params'] = [scales.requires_grad_(True)]   
 
+            # if iteration == opt.scaling_enable_iteration:
+            #     print('Enbale scaling')
+            #     for param_group in gaussians.optimizer.param_groups:
+            #         if param_group["name"] == "scaling":
+            #             param_group['lr'] = 0.005
+            
             # Optimizer step
             if iteration < opt.iterations:
                 gaussians.optimizer.step()
@@ -238,7 +252,7 @@ if __name__ == "__main__":
     # Start GUI server, configure and run training
     network_gui.init(args.ip, args.port)
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
-    render_items = ['rgb', 'alpha', 'depth', 'normal', 'pre_normal']
+    render_items = ['rgb', 'alpha', 'depth', 'normal', 'edge', 'curvature']
     training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from, render_items)
 
     # All done

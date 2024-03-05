@@ -28,13 +28,14 @@ def export(dataset, pipe, iteration, downsample):
         for i in tqdm(range(len(cameras))):
             render_pkg = render(cameras[i], gaussians, pipe, background)
             image, depth = render_pkg["render"].permute(1,2,0), render_pkg["median_depth"]
-            normal = depth_to_normal(depth).permute(1,2,0)
-            normal = torch.matmul(normal, cameras[i].world_view_transform[:3, :3].T)
-            depth = depth.squeeze()
+            point = unproject_depth_map(depth, cameras[i])
+            normal = depth_to_normal(depth, cameras[i])
+            # normal = render_pkg["normal"].permute(1,2,0)
+            # normal = normal*0.5+0.5
 
-            mask = depth>0
+            mask = (depth>0).squeeze()
+            point = point[mask]
 
-            point = unproject_depth_map(cameras[i], depth)[mask]
             color = image[mask]
             normal = normal[mask]
 
@@ -42,7 +43,7 @@ def export(dataset, pipe, iteration, downsample):
 
             points = torch.cat((points, point[indices]), dim=0)
             colors = torch.cat((colors, color[indices]), dim=0)
-            normals = torch.cat((normals, normal[indices]), dim=0)
+            normals = torch.cat((normals, normal[indices]), dim=0)            
     
     
     pcd.points = o3d.utility.Vector3dVector(points.cpu().numpy())
@@ -55,7 +56,7 @@ def export(dataset, pipe, iteration, downsample):
     print("\nComputing Poisson Mesh")
     with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm:
         mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=10)
-    vertices_to_remove = densities < np.quantile(densities, 0.05)
+    vertices_to_remove = densities < np.quantile(densities, 0.01)
     mesh.remove_vertices_by_mask(vertices_to_remove)
 
     print("\nSaving Poisson Mesh")
