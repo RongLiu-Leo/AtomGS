@@ -108,9 +108,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         
         
 
-        # if iteration > opt.scaling_enable_iteration:
-        #     Ldep = edge_aware_depth_loss(gt_image, depth)
-        #     loss += Ldep
+        if iteration > opt.scaling_enable_iteration:
+            Ldep = edge_aware_depth_loss(gt_image, depth)
+            loss += Ldep
             # depth_normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1)
             # pre_normal = render_pkg['normal']
             # Lnormal = l2_loss(depth_normal, pre_normal)
@@ -145,9 +145,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-                    if loss > 0.01 and iteration < opt.scaling_enable_iteration/2:
-                        print('blind densify')
-                        gaussians.densify_and_prune(0., opt.prune_opacity_threshold)
+                    if iteration < opt.scaling_enable_iteration/2:
+                        gaussians.densify_and_prune(opt.densify_grad_threshold * (2 * iteration / opt.scaling_enable_iteration)**2, opt.prune_opacity_threshold)
                     else:
                         gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
 
@@ -157,7 +156,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.scaling_enable_iteration:
                     gaussians.reset_opacity()
 
-            # if iteration == opt.scaling_enable_iteration:
+            # if iteration == opt.densify_until_iter:
             #     print('Enbale scaling')
             #     for param_group in gaussians.optimizer.param_groups:
             #         if param_group["name"] == "scaling":
