@@ -53,7 +53,7 @@ class ModelParams(ParamGroup):
         self._resolution = 1
         self._white_background = False
         self.data_device = "cuda"
-        self.particle_resolution = 0.003
+        self.particle_resolution = 0.01
         self.eval = False
         super().__init__(parser, "Loading Parameters", sentinel)
 
@@ -84,8 +84,8 @@ class OptimizationParams(ParamGroup):
         self.densification_interval = 100
         self.scaling_enable_iteration = self.iterations/2
         self.densify_from_iter = 500
-        self.densify_until_iter = self.iterations/10*9
-        self.opacity_reset_interval = 500
+        self.densify_until_iter = self.iterations/4*3
+        self.opacity_reset_interval = 300
 
         self.prune_opacity_threshold = 0.5
         self.densify_grad_threshold = 0.0002
