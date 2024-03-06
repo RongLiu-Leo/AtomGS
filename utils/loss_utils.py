@@ -20,21 +20,27 @@ def entropy_loss(P):
     return loss
 
 def edge_aware_depth_loss(I, D):
-    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
-    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
+    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)/4
+    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)/4
 
     dD_dx = torch.cat([F.conv2d(D[i].unsqueeze(0), sobel_x, padding=1) for i in range(D.shape[0])])
     dD_dy = torch.cat([F.conv2d(D[i].unsqueeze(0), sobel_y, padding=1) for i in range(D.shape[0])])
-
+    
     dI_dx = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_x, padding=1) for i in range(I.shape[0])])
+    dI_dx = torch.mean(torch.abs(dI_dx), 0, keepdim=True)
     dI_dy = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_y, padding=1) for i in range(I.shape[0])])
-    weights_x = torch.exp(-torch.mean(torch.abs(dI_dx), 0, keepdim=True))
-    weights_y = torch.exp(-torch.mean(torch.abs(dI_dy), 0, keepdim=True))
+    dI_dy = torch.mean(torch.abs(dI_dy), 0, keepdim=True)
+
+    # weights_x = torch.exp(-dI_dx)
+    # weights_y = torch.exp(-dI_dy)
+
+    weights_x = (dI_dx-1)**200
+    weights_y = (dI_dy-1)**200
 
     loss_x = abs(dD_dx) * weights_x
     loss_y = abs(dD_dy) * weights_y
-
-    return loss_x.mean() + loss_y.mean()
+    loss = (loss_x + loss_y).norm(dim=0, keepdim=True)
+    return loss.mean()
 
 def l1_loss(network_output, gt):
     return torch.abs((network_output - gt)).mean()

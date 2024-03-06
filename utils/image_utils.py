@@ -14,17 +14,29 @@ import matplotlib.pyplot as plt
 import torch.nn.functional as F
 
 def loss_map(I, D):
-    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
-    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
+    # print(I.max(), I.min())
+    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)/4
+    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)/4
+
     dD_dx = torch.cat([F.conv2d(D[i].unsqueeze(0), sobel_x, padding=1) for i in range(D.shape[0])])
     dD_dy = torch.cat([F.conv2d(D[i].unsqueeze(0), sobel_y, padding=1) for i in range(D.shape[0])])
+    
     dI_dx = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_x, padding=1) for i in range(I.shape[0])])
+    dI_dx = torch.mean(torch.abs(dI_dx), 0, keepdim=True)
     dI_dy = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_y, padding=1) for i in range(I.shape[0])])
-    weights_x = torch.exp(-torch.mean(torch.abs(dI_dx), 0, keepdim=True))
-    weights_y = torch.exp(-torch.mean(torch.abs(dI_dy), 0, keepdim=True))
+    dI_dy = torch.mean(torch.abs(dI_dy), 0, keepdim=True)
+
+    # weights_x = torch.exp(-dI_dx)
+    # weights_y = torch.exp(-dI_dy)
+
+    weights_x = (dI_dx-1)**200
+    weights_y = (dI_dy-1)**200
+
+
     loss_x = abs(dD_dx) * weights_x
     loss_y = abs(dD_dy) * weights_y
-    return loss_x + loss_y
+    loss = (loss_x + loss_y).norm(dim=0, keepdim=True)
+    return loss
 
 
 def mse(img1, img2):
@@ -35,8 +47,8 @@ def psnr(img1, img2):
     return 20 * torch.log10(1.0 / torch.sqrt(mse))
 
 def gradient_map(image):
-    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()
-    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()
+    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()/4
+    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()/4
     
     grad_x = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_x, padding=1) for i in range(image.shape[0])])
     grad_y = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_y, padding=1) for i in range(image.shape[0])])
@@ -138,19 +150,12 @@ def render_net_image(render_pkg, render_items, render_mode, camera):
         net_image = (net_image+1)/2
         net_image[mask.expand_as(net_image)] = 0.
         net_image = net_image.permute(2,0,1)
-        # net_image[net_image==0.5] = 0.
-        # net_image = torch.nan_to_num(net_image)
     elif output == 'edge':
         net_image = gradient_map(render_pkg["render"])
     elif output == 'curvature':
-        # net_image = depth_to_normal(render_pkg["mean_depth"], camera).permute(2,0,1)
-        # net_image = (net_image+1)/2
-        # net_image = gradient_map(net_image)
         net_image = gradient_map(render_pkg["mean_depth"])
     elif output == 'depth_loss':
         rgb = render_pkg["render"]
-        normal = depth_to_normal(render_pkg["mean_depth"], camera).permute(2,0,1)
-        # net_image = loss_map(rgb, normal)
         net_image = loss_map(rgb, render_pkg["mean_depth"])
     else:
         net_image = render_pkg["render"]

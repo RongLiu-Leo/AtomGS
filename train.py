@@ -41,7 +41,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
-    scale_decay = 0.1 ** (opt.densification_interval / opt.scaling_enable_iteration)
+    scale_decay = 0.2 ** (opt.densification_interval / opt.scale_decay_until)
 
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
@@ -93,23 +93,13 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
         Lssim = (1.0 - ssim(image, gt_image))
-        # lambda_dssim = iteration / opt.scaling_enable_iteration + 0.5
         lambda_dssim = iteration / opt.iterations
         
-        # lambda_dssim = 0.
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
         loss = Lrgb
-        # Lnormal = None
-        
-        
-        
-        
-
-        if opt.scaling_enable_iteration < iteration < opt.densify_until_iter:
-            # normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1)
-            Lnormal = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
-            # Lnormal = edge_aware_normal_loss(image, render_pkg["mean_depth"])
-            loss += 0.1*Lnormal
+        if iteration > opt.smooth_iter:
+            Lnormal = edge_aware_depth_loss(gt_image, depth)
+            loss += 10*Lnormal
 
         loss.backward()
 
@@ -131,23 +121,23 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 scene.save(iteration)
 
             # Densification
-            if iteration < opt.densify_until_iter:
-                gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
+            gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-                    if iteration < opt.scaling_enable_iteration/2:
-                        gaussians.densify_and_prune(opt.densify_grad_threshold * (2 * iteration / opt.scaling_enable_iteration)**2, opt.prune_opacity_threshold)
-                    else:
-                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
+            if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
+                if iteration < opt.warm_up_until:
+                    warm = (iteration / opt.warm_up_until)**2
+                    gaussians.densify_and_prune(opt.densify_grad_threshold * warm, opt.prune_opacity_threshold * warm)
+                else:
+                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
 
-                if  iteration % opt.densification_interval == 0 and iteration < opt.scaling_enable_iteration:
-                    gaussians.reset_scaling(scale_decay)
-                
-                if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.scaling_enable_iteration:
-                    gaussians.reset_opacity()
+            if  iteration % opt.densification_interval == 0 and iteration < opt.scale_decay_until:
+                gaussians.reset_scaling(scale_decay)
+            
+            if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.warm_up_until:
+                gaussians.reset_opacity()
 
-            # if iteration == opt.densify_until_iter:
-            #     print('Enbale scaling')
+            # if iteration == opt.smooth_iter:
+            #     print('\nsmooth_iter\n')
             #     for param_group in gaussians.optimizer.param_groups:
             #         if param_group["name"] == "scaling":
             #             param_group['lr'] = 0.005
