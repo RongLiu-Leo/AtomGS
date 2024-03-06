@@ -99,27 +99,18 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # lambda_dssim = 0.
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
         loss = Lrgb
-        # depth_normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam)
-        # pre_normal = render_pkg['normal'].permute(1,2,0)
-        # Lnormal = -torch.bmm(depth_normal.view(-1, 1,3), pre_normal.view((-1, 3,1))).mean()
-        # loss += 0.001*Lnormal
+        # Lnormal = None
         
         
         
         
 
-        if iteration > opt.scaling_enable_iteration:
-            Ldep = edge_aware_depth_loss(gt_image, depth)
-            loss += Ldep
-            # depth_normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1)
-            # pre_normal = render_pkg['normal']
-            # Lnormal = l2_loss(depth_normal, pre_normal)
-            # depth_normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam)
-            # pre_normal = render_pkg['normal'].permute(1,2,0)
-            # Lnormal = -torch.bmm(depth_normal.view(-1, 1,3), pre_normal.view((-1, 3,1))).mean()
-            # loss += 0.001*Lnormal
-            # Lent = entropy_loss(alpha)
-            # loss += Lent            
+        if opt.scaling_enable_iteration < iteration < opt.densify_until_iter:
+            # normal = depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1)
+            Lnormal = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
+            # Lnormal = edge_aware_normal_loss(image, render_pkg["mean_depth"])
+            loss += 0.1*Lnormal
+
         loss.backward()
 
         iter_end.record()
@@ -128,7 +119,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             # Progress bar
             ema_loss_for_log = 0.4 * loss.item() + 0.6 * ema_loss_for_log
             if iteration % 10 == 0:
-                # progress_bar.set_postfix({"Lrgb": f"{Lrgb:.{4}f}", "Lent": f"{Lent:.{4}f}", "Ldep": f"{Ldep:.{4}f}", "#": f"{gaussians.get_opacity.shape[0]}"})
                 progress_bar.set_postfix({"Loss": f"{ema_loss_for_log:.{7}f}", "#": f"{gaussians.get_opacity.shape[0]}"})
                 progress_bar.update(10)
             if iteration == opt.iterations:
@@ -251,7 +241,7 @@ if __name__ == "__main__":
     # Start GUI server, configure and run training
     network_gui.init(args.ip, args.port)
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
-    render_items = ['rgb', 'alpha', 'depth', 'normal', 'edge', 'curvature']
+    render_items = ['RGB', 'Alpha', 'Depth', 'Normal', 'Curvature', 'Edge', 'depth_loss']
     training(lp.extract(args), op.extract(args), pp.extract(args), args.test_iterations, args.save_iterations, args.checkpoint_iterations, args.start_checkpoint, args.debug_from, render_items)
 
     # All done

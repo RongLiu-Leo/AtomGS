@@ -43,7 +43,7 @@ def export(dataset, pipe, iteration, downsample):
 
             points = torch.cat((points, point[indices]), dim=0)
             colors = torch.cat((colors, color[indices]), dim=0)
-            normals = torch.cat((normals, normal[indices]), dim=0)            
+            normals = torch.cat((normals, normal[indices]), dim=0)
     
     
     pcd.points = o3d.utility.Vector3dVector(points.cpu().numpy())

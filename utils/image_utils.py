@@ -13,6 +13,20 @@ import torch
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
 
+def loss_map(I, D):
+    sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
+    sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).to(I.device)
+    dD_dx = torch.cat([F.conv2d(D[i].unsqueeze(0), sobel_x, padding=1) for i in range(D.shape[0])])
+    dD_dy = torch.cat([F.conv2d(D[i].unsqueeze(0), sobel_y, padding=1) for i in range(D.shape[0])])
+    dI_dx = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_x, padding=1) for i in range(I.shape[0])])
+    dI_dy = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_y, padding=1) for i in range(I.shape[0])])
+    weights_x = torch.exp(-torch.mean(torch.abs(dI_dx), 0, keepdim=True))
+    weights_y = torch.exp(-torch.mean(torch.abs(dI_dy), 0, keepdim=True))
+    loss_x = abs(dD_dx) * weights_x
+    loss_y = abs(dD_dy) * weights_y
+    return loss_x + loss_y
+
+
 def mse(img1, img2):
     return (((img1 - img2)) ** 2).view(img1.shape[0], -1).mean(1, keepdim=True)
 
@@ -20,20 +34,15 @@ def psnr(img1, img2):
     mse = (((img1 - img2)) ** 2).view(img1.shape[0], -1).mean(1, keepdim=True)
     return 20 * torch.log10(1.0 / torch.sqrt(mse))
 
-def depth_to_curvature(depth_map):
-    laplacian_kernel = torch.tensor([[0, 1, 0], [1, -4, 1], [0, 1, 0]]).float().unsqueeze(0).unsqueeze(0).cuda()
-    
-    curvature = F.conv2d(depth_map, laplacian_kernel, padding=1)
-    
-    return curvature
-
-def rgb_to_edge(rgb):
+def gradient_map(image):
     sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()
     sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()
     
-    grad_x = torch.cat([F.conv2d(rgb[i].unsqueeze(0), sobel_x, padding=1) for i in range(rgb.shape[0])])
-    grad_y = torch.cat([F.conv2d(rgb[i].unsqueeze(0), sobel_y, padding=1) for i in range(rgb.shape[0])])
+    grad_x = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_x, padding=1) for i in range(image.shape[0])])
+    grad_y = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_y, padding=1) for i in range(image.shape[0])])
     edge = torch.sqrt(grad_x ** 2 + grad_y ** 2)
+    edge = edge.norm(dim=0, keepdim=True)
+    # edge = (edge - edge.min()) / (edge.max() - edge.min())
 
     return edge
 
@@ -55,9 +64,11 @@ def depth_to_normal(depth_map, camera):
 
     # Compute cross product to get normals
     normals = torch.cross(v1, v2, dim=-1)
+    # print(torch.norm(normals, dim=-1, keepdim=True)==0)
 
     # Normalize the normals
-    normals = normals / (torch.norm(normals, dim=-1, keepdim=True) + 1e-8)
+    normals = normals / (torch.norm(normals, dim=-1, keepdim=True)+1e-8)
+    # print(normals.isnan().sum())
 
     return normals
 
@@ -87,21 +98,24 @@ def unproject_depth_map(depth_map, camera):
     f1 = K_matrix[2, 2]
     f2 = K_matrix[3, 2]
     # get the scaled depth
-    sdepth = (f1 * points_camera[..., 2:3] + f2) / points_camera[..., 2:3]
+    mask = torch.squeeze(points_camera[..., 2:3]!=0)
+    # print(points_camera)
+    sdepth = (f1 * points_camera[..., 2:3] + f2) / (points_camera[..., 2:3] + 1e-8)
     # concatenate xy + scaled depth
     points_camera = torch.cat((points_camera[..., 0:2], sdepth), dim=-1)
+    # print(points_camera)
+    
 
 
     points_camera = points_camera.view((height,width,3))
     points_camera = torch.cat([points_camera, torch.ones_like(points_camera[:, :, :1])], dim=-1)  
     points_world = torch.matmul(points_camera, camera.full_proj_transform.inverse())
-    # print(torch.isnan(points_world[:, :, :3]).sum())
+
 
     # Discard the homogeneous coordinate
-    points_world = points_world[:, :, :3] / (points_world[:, :, 3:]+1e-8)
+    points_world = points_world[:, :, :3] / points_world[:, :, 3:]
     points_world = points_world.view((height,width,3))
-    points_world = torch.nan_to_num(points_world)
-    # print(torch.isnan(points_world).sum())
+
     return points_world
 
 def colormap(map, cmap="magma"):
@@ -111,7 +125,7 @@ def colormap(map, cmap="magma"):
     return (1 - map) * start_color + map * end_color
 
 def render_net_image(render_pkg, render_items, render_mode, camera):
-    output = render_items[render_mode]
+    output = render_items[render_mode].lower()
     if output == 'alpha':
         net_image = render_pkg["alpha"]
         net_image = (net_image - net_image.min()) / (net_image.max() - net_image.min())
@@ -119,14 +133,25 @@ def render_net_image(render_pkg, render_items, render_mode, camera):
         net_image = render_pkg["mean_depth"]
         net_image = (net_image - net_image.min()) / (net_image.max() - net_image.min())
     elif output == 'normal':
-        net_image = depth_to_normal(render_pkg["mean_depth"], camera).permute(2,0,1)
+        net_image = depth_to_normal(render_pkg["mean_depth"], camera)
+        mask = torch.norm(net_image, dim=-1, keepdim=True)==0
         net_image = (net_image+1)/2
+        net_image[mask.expand_as(net_image)] = 0.
+        net_image = net_image.permute(2,0,1)
         # net_image[net_image==0.5] = 0.
         # net_image = torch.nan_to_num(net_image)
     elif output == 'edge':
-        net_image = rgb_to_edge(render_pkg["render"])
+        net_image = gradient_map(render_pkg["render"])
     elif output == 'curvature':
-        net_image = depth_to_curvature(render_pkg["mean_depth"])
+        # net_image = depth_to_normal(render_pkg["mean_depth"], camera).permute(2,0,1)
+        # net_image = (net_image+1)/2
+        # net_image = gradient_map(net_image)
+        net_image = gradient_map(render_pkg["mean_depth"])
+    elif output == 'depth_loss':
+        rgb = render_pkg["render"]
+        normal = depth_to_normal(render_pkg["mean_depth"], camera).permute(2,0,1)
+        # net_image = loss_map(rgb, normal)
+        net_image = loss_map(rgb, render_pkg["mean_depth"])
     else:
         net_image = render_pkg["render"]
     if net_image.shape[0]==1:
