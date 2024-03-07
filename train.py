@@ -41,7 +41,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
-    scale_decay = 0.2 ** (opt.densification_interval / opt.scale_decay_until)
+    scale_decay = 0.1 ** (opt.densification_interval / opt.scale_decay_until)
 
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
@@ -99,7 +99,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         loss = Lrgb
         if iteration > opt.smooth_iter:
             Lnormal = edge_aware_depth_loss(gt_image, depth)
-            loss += 10*Lnormal
+            loss = 0.1*Lrgb + Lnormal
 
         loss.backward()
 
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     parser.add_argument('--debug_from', type=int, default=-1)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
     parser.add_argument("--test_iterations", nargs="+", type=int, default=[x*500 for x in range(16)])
-    parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000])
+    parser.add_argument("--save_iterations", nargs="+", type=int, default=[4667, 7_000])
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
     parser.add_argument("--start_checkpoint", type=str, default = None)

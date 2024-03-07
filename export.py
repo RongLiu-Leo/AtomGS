@@ -33,7 +33,7 @@ def export(dataset, pipe, iteration, downsample):
             # normal = render_pkg["normal"].permute(1,2,0)
             # normal = normal*0.5+0.5
 
-            mask = (depth>0).squeeze()
+            mask = torch.logical_and(depth>0, depth<5).squeeze()
             point = point[mask]
 
             color = image[mask]
@@ -50,8 +50,8 @@ def export(dataset, pipe, iteration, downsample):
     pcd.colors = o3d.utility.Vector3dVector(colors.cpu().numpy())
     pcd.normals = o3d.utility.Vector3dVector(normals.cpu().numpy())
 
-    print("\nSaving Point Cloud")
-    o3d.io.write_point_cloud(os.path.join(args.model_path, 'pcd.ply'), pcd)
+    # print("\nSaving Point Cloud")
+    # o3d.io.write_point_cloud(os.path.join(args.model_path, 'pcd.ply'), pcd)
 
     print("\nComputing Poisson Mesh")
     with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm:
@@ -60,7 +60,7 @@ def export(dataset, pipe, iteration, downsample):
     mesh.remove_vertices_by_mask(vertices_to_remove)
 
     print("\nSaving Poisson Mesh")
-    o3d.io.write_triangle_mesh(os.path.join(args.model_path, 'mesh.ply'), mesh)
+    o3d.io.write_triangle_mesh(os.path.join(args.model_path, "point_cloud", "iteration_" + str(iteration),'mesh.ply'), mesh)
     
     
 if __name__ == "__main__":

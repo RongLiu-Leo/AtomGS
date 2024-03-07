@@ -34,8 +34,8 @@ def edge_aware_depth_loss(I, D):
     # weights_x = torch.exp(-dI_dx)
     # weights_y = torch.exp(-dI_dy)
 
-    weights_x = (dI_dx-1)**200
-    weights_y = (dI_dy-1)**200
+    weights_x = (dI_dx-1)**100
+    weights_y = (dI_dy-1)**100
 
     loss_x = abs(dD_dx) * weights_x
     loss_y = abs(dD_dy) * weights_y
