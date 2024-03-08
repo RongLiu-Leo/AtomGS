@@ -205,7 +205,6 @@ class GaussianModel:
         self._opacity = optimizable_tensors["opacity"]
     
     def reset_scaling(self, decay):
-        self.atom_resolution *= decay 
         dist = torch.exp(self._scaling) * decay
         scaling_new = torch.log(dist)
         optimizable_tensors = self.replace_tensor_to_optimizer(scaling_new, "scaling")

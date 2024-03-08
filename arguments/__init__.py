@@ -46,14 +46,14 @@ class ParamGroup:
 
 class ModelParams(ParamGroup): 
     def __init__(self, parser, sentinel=False):
-        self.sh_degree = 0
+        self.sh_degree = 3
         self._source_path = ""
         self._model_path = ""
         self._images = "images"
         self._resolution = 1
         self._white_background = False
         self.data_device = "cuda"
-        self.atom_resolution = 0.005
+        self.atom_resolution = 0.01
         self.eval = False
         super().__init__(parser, "Loading Parameters", sentinel)
 
@@ -79,7 +79,7 @@ class OptimizationParams(ParamGroup):
         self.feature_lr = 0.0025
         self.opacity_lr = 0.05
         self.scaling_lr = 0.00
-        self.rotation_lr = 0.00
+        self.rotation_lr = 0.001
 
         self.densification_interval = 100
         self.densify_from_iter = 500
@@ -89,7 +89,7 @@ class OptimizationParams(ParamGroup):
         self.scale_decay_until = int(self.iterations / 3)
         self.smooth_iter = int(self.iterations / 3 * 2)
 
-        self.prune_opacity_threshold = 0.1
+        self.prune_opacity_threshold = 0.33
         self.densify_grad_threshold = 0.0002
         self.random_background = False
         super().__init__(parser, "Optimization Parameters")

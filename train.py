@@ -71,7 +71,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     if do_training and ((iteration < int(opt.iterations)) or not keep_alive):
                         break
                 except Exception as e:
-                    raise e
+                    # raise e
                     network_gui.conn = None
 
         iter_start.record()
@@ -98,8 +98,10 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
         loss = Lrgb
         if iteration > opt.smooth_iter:
-            Lnormal = edge_aware_depth_loss(gt_image, depth)
-            loss = 0.1*Lrgb + Lnormal
+            Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
+            Lentropy = entropy_loss(alpha)
+            loss += Lentropy
+            loss += 0.01*Lnormal
 
         loss.backward()
 
@@ -121,23 +123,23 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 scene.save(iteration)
 
             # Densification
-            gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
+            if iteration < opt.smooth_iter:
+                gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-            if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-                if iteration < opt.warm_up_until:
-                    warm = (iteration / opt.warm_up_until)**2
-                    gaussians.densify_and_prune(opt.densify_grad_threshold * warm, opt.prune_opacity_threshold * warm)
-                else:
-                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
+                    if iteration < opt.warm_up_until:
+                        warm = (iteration / opt.warm_up_until)**2
+                        gaussians.densify_and_prune(opt.densify_grad_threshold * warm, opt.prune_opacity_threshold * warm)
+                    else:
+                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
 
-            if  iteration % opt.densification_interval == 0 and iteration < opt.scale_decay_until:
-                gaussians.reset_scaling(scale_decay)
-            
-            if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.warm_up_until:
-                gaussians.reset_opacity()
+                if  iteration % opt.densification_interval == 0 and iteration < opt.scale_decay_until:
+                    gaussians.reset_scaling(scale_decay)
+                
+                if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)):
+                    gaussians.reset_opacity()
 
             # if iteration == opt.smooth_iter:
-            #     print('\nsmooth_iter\n')
             #     for param_group in gaussians.optimizer.param_groups:
             #         if param_group["name"] == "scaling":
             #             param_group['lr'] = 0.005
@@ -216,7 +218,7 @@ if __name__ == "__main__":
     parser.add_argument('--debug_from', type=int, default=-1)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
     parser.add_argument("--test_iterations", nargs="+", type=int, default=[x*500 for x in range(16)])
-    parser.add_argument("--save_iterations", nargs="+", type=int, default=[4667, 7_000])
+    parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000])
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
     parser.add_argument("--start_checkpoint", type=str, default = None)

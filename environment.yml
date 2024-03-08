@@ -14,5 +14,4 @@ dependencies:
   - tqdm
   - pip:
     - submodules/diff-gaussian-rasterization
-    - submodules/simple-knn
     - open3d
