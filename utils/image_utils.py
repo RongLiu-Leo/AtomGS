@@ -12,6 +12,7 @@
 import torch
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
+import numpy as np
 
 def loss_map(I, D):
     # print(I.max(), I.min())
@@ -29,8 +30,8 @@ def loss_map(I, D):
     # weights_x = torch.exp(-dI_dx)
     # weights_y = torch.exp(-dI_dy)
 
-    weights_x = (dI_dx-1)**200
-    weights_y = (dI_dy-1)**200
+    weights_x = (dI_dx-1)**2
+    weights_y = (dI_dy-1)**2
 
 
     loss_x = abs(dD_dx) * weights_x
@@ -130,11 +131,12 @@ def unproject_depth_map(depth_map, camera):
 
     return points_world
 
-def colormap(map, cmap="magma"):
-    colors = plt.cm.get_cmap(cmap).colors
-    start_color = torch.tensor(colors[0]).view(3, 1, 1).to(map.device)
-    end_color = torch.tensor(colors[-1]).view(3, 1, 1).to(map.device)
-    return (1 - map) * start_color + map * end_color
+def colormap(map, cmap="turbo"):
+    colors = torch.tensor(plt.cm.get_cmap(cmap).colors).to(map.device)
+    map = (map - map.min()) / (map.max() - map.min())
+    map = (map * 255).round().long().squeeze()
+    map = colors[map].permute(2,0,1)
+    return map
 
 def render_net_image(render_pkg, render_items, render_mode, camera):
     output = render_items[render_mode].lower()
@@ -153,10 +155,10 @@ def render_net_image(render_pkg, render_items, render_mode, camera):
     elif output == 'edge':
         net_image = gradient_map(render_pkg["render"])
     elif output == 'curvature':
-        net_image = gradient_map(render_pkg["mean_depth"])
+        net_image = gradient_map( depth_to_normal(render_pkg["mean_depth"], camera).permute(2,0,1))
     elif output == 'depth_loss':
         rgb = render_pkg["render"]
-        net_image = loss_map(rgb, render_pkg["mean_depth"])
+        net_image = loss_map(rgb, depth_to_normal(render_pkg["mean_depth"], camera).permute(2,0,1))
     else:
         net_image = render_pkg["render"]
     if net_image.shape[0]==1:
