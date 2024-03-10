@@ -12,7 +12,7 @@
 import os
 import torch
 from random import randint
-from utils.loss_utils import l1_loss, ssim, edge_aware_depth_loss, entropy_loss, l2_loss
+from utils.loss_utils import l1_loss, ssim, edge_aware_depth_loss, entropy_loss
 from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
@@ -96,11 +96,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         lambda_dssim = iteration / opt.iterations
         
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
-        loss = Lrgb
+        loss = Lrgb            
         if iteration > opt.smooth_iter:
-            Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
             Lentropy = entropy_loss(alpha)
             loss += Lentropy
+            Lnormal = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
+            # Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
             loss += 0.01*Lnormal
 
         loss.backward()
@@ -136,7 +137,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 if  iteration % opt.densification_interval == 0 and iteration < opt.scale_decay_until:
                     gaussians.reset_scaling(scale_decay)
                 
-                if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)):
+                if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.smooth_iter:
                     gaussians.reset_opacity()
 
             # if iteration == opt.smooth_iter:
