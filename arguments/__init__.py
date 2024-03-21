@@ -50,7 +50,7 @@ class ModelParams(ParamGroup):
         self._source_path = ""
         self._model_path = ""
         self._images = "images"
-        self._resolution = 1
+        self._resolution = -1
         self._white_background = False
         self.data_device = "cuda"
         self.atom_resolution = 0.01
@@ -72,8 +72,8 @@ class PipelineParams(ParamGroup):
 class OptimizationParams(ParamGroup):
     def __init__(self, parser):
         self.iterations = 7000
-        self.position_lr_init = 0.0002
-        self.position_lr_final = 0.00002
+        self.position_lr_init = 0.00016
+        self.position_lr_final = 0.000016
         self.position_lr_delay_mult = 0.01
         self.position_lr_max_steps = self.iterations
         self.feature_lr = 0.0025

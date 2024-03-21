@@ -128,8 +128,8 @@ class GaussianModel:
 
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
 
-        dist = torch.ones((fused_point_cloud.shape[0]), device="cuda")[...,None].repeat(1, 3) * self.atom_resolution * self.spatial_lr_scale
-        scales = torch.log(dist)
+        dist = torch.ones((fused_point_cloud.shape[0]), device="cuda") * self.atom_resolution * self.spatial_lr_scale
+        scales = torch.log(dist)[...,None].repeat(1, 3)
         rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
         rots[:, 0] = 1
 
@@ -204,8 +204,8 @@ class GaussianModel:
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
         self._opacity = optimizable_tensors["opacity"]
     
-    def reset_scaling(self, decay):
-        dist = torch.exp(self._scaling) * decay
+    def reset_scaling(self):
+        dist = torch.ones_like(self._scaling) * self.atom_resolution * self.spatial_lr_scale
         scaling_new = torch.log(dist)
         optimizable_tensors = self.replace_tensor_to_optimizer(scaling_new, "scaling")
         self._scaling = optimizable_tensors["scaling"]
@@ -346,6 +346,7 @@ class GaussianModel:
     def clone_points(self, clone_mask):
         
         new_xyz = self._xyz[clone_mask]
+        new_xyz = new_xyz - torch.sign(self._xyz.grad[clone_mask]) * self.atom_resolution * self.spatial_lr_scale
         new_features_dc = self._features_dc[clone_mask]
         new_features_rest = self._features_rest[clone_mask]
         new_opacities = self._opacity[clone_mask]
@@ -361,7 +362,7 @@ class GaussianModel:
         samples = torch.normal(mean=means, std=stds)
         rots = build_rotation(self._rotation[selected_pts_mask]).repeat(N,1,1)
         new_xyz = torch.bmm(rots, samples.unsqueeze(-1)).squeeze(-1) + self.get_xyz[selected_pts_mask].repeat(N, 1)
-        new_scaling = self.scaling_inverse_activation(self.get_scaling[selected_pts_mask].repeat(N,1) / (0.5*N))
+        new_scaling = self.scaling_inverse_activation(self.get_scaling[selected_pts_mask].repeat(N,1) / 2)
         new_rotation = self._rotation[selected_pts_mask].repeat(N,1)
         new_features_dc = self._features_dc[selected_pts_mask].repeat(N,1,1)
         new_features_rest = self._features_rest[selected_pts_mask].repeat(N,1,1)
@@ -379,10 +380,10 @@ class GaussianModel:
         clone_mask = torch.norm(grads, dim=-1) >= max_grad
         self.clone_points(clone_mask)
 
-        # split_mask = torch.max(self.get_scaling, dim=1).values > self.atom_resolution * self.spatial_lr_scale
+        split_mask = torch.max(self.get_scaling, dim=1).values > self.atom_resolution * self.spatial_lr_scale * 2
         # if split_mask.sum()>0:
-        #     print('\n split\n', torch.max(self.get_scaling, dim=1).values, self.atom_resolution * self.spatial_lr_scale)
-        # self.split_points(clone_mask)
+        #     print('\n split\n', split_mask.sum(), torch.max(self.get_scaling), self.atom_resolution * self.spatial_lr_scale)
+        self.split_points(split_mask)
 
         prune_mask = (self.get_opacity < min_opacity).squeeze()
         self.prune_points(prune_mask)

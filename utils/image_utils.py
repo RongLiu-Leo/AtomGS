@@ -150,7 +150,7 @@ def render_net_image(render_pkg, render_items, render_mode, camera):
         net_image = depth_to_normal(render_pkg["mean_depth"], camera)
         mask = torch.norm(net_image, dim=-1, keepdim=True)==0
         net_image = (net_image+1)/2
-        net_image[mask.expand_as(net_image)] = 0.
+        net_image[mask.expand_as(net_image)] = 1.
         net_image = net_image.permute(2,0,1)
     elif output == 'edge':
         net_image = gradient_map(render_pkg["render"])
