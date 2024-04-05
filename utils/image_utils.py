@@ -27,11 +27,9 @@ def loss_map(I, D):
     dI_dy = torch.cat([F.conv2d(I[i].unsqueeze(0), sobel_y, padding=1) for i in range(I.shape[0])])
     dI_dy = torch.mean(torch.abs(dI_dy), 0, keepdim=True)
 
-    # weights_x = torch.exp(-dI_dx)
-    # weights_y = torch.exp(-dI_dy)
 
-    weights_x = (dI_dx-1)**2
-    weights_y = (dI_dy-1)**2
+    weights_x = (dI_dx-1)**200
+    weights_y = (dI_dy-1)**200
 
 
     loss_x = abs(dD_dx) * weights_x
@@ -50,9 +48,11 @@ def psnr(img1, img2):
 def gradient_map(image):
     sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()/4
     sobel_y = torch.tensor([[-1, -2, -1], [0, 0, 0], [1, 2, 1]]).float().unsqueeze(0).unsqueeze(0).cuda()/4
+
+    image = F.pad(image, (1, 1, 1, 1), 'reflect')
     
-    grad_x = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_x, padding=1) for i in range(image.shape[0])])
-    grad_y = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_y, padding=1) for i in range(image.shape[0])])
+    grad_x = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_x, padding=0) for i in range(image.shape[0])])
+    grad_y = torch.cat([F.conv2d(image[i].unsqueeze(0), sobel_y, padding=0) for i in range(image.shape[0])])
     edge = torch.sqrt(grad_x ** 2 + grad_y ** 2)
     edge = edge.norm(dim=0, keepdim=True)
     # edge = (edge - edge.min()) / (edge.max() - edge.min())

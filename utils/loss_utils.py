@@ -34,8 +34,8 @@ def edge_aware_depth_loss(I, D):
     # weights_x = torch.exp(-dI_dx)
     # weights_y = torch.exp(-dI_dy)
 
-    weights_x = (dI_dx-1)**200
-    weights_y = (dI_dy-1)**200
+    weights_x = (dI_dx-1)**500
+    weights_y = (dI_dy-1)**500
 
     loss_x = abs(dD_dx) * weights_x
     loss_y = abs(dD_dy) * weights_y
@@ -88,5 +88,15 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
     if size_average:
         return ssim_map.mean()
     else:
-        return ssim_map.mean(1).mean(1).mean(1)
+        # print(ssim_map.shape)
+        return ssim_map
+    
+def ms_ssim_loss(x, y, scales=3, window_size=11):
+    ssim_loss = 0
+    for i in range(scales):
+        ssim_loss += 1/scales * ssim(x, y, window_size)
+        x = F.avg_pool2d(x, 2, stride=2)
+        y = F.avg_pool2d(y, 2, stride=2)
+
+    return ssim_loss
 

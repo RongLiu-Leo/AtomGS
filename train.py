@@ -12,13 +12,13 @@
 import os
 import torch
 from random import randint
-from utils.loss_utils import l1_loss, ssim, edge_aware_depth_loss, entropy_loss
+from utils.loss_utils import l1_loss, ssim, edge_aware_depth_loss, entropy_loss, ms_ssim_loss
 from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
 from utils.general_utils import safe_state
 from tqdm import tqdm
-from utils.image_utils import psnr, render_net_image, depth_to_normal
+from utils.image_utils import psnr, render_net_image, depth_to_normal, gradient_map
 from argparse import ArgumentParser, Namespace
 from arguments import ModelParams, PipelineParams, OptimizationParams
 
@@ -41,8 +41,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     bg_color = [1, 1, 1] if dataset.white_background else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
-    scale_decay = 0.1 ** (opt.densification_interval / opt.scale_decay_until)
-
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
 
@@ -54,7 +52,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Pick a random Camera
         if not viewpoint_stack:
             viewpoint_stack = scene.getTrainCameras().copy()
-        viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack)-1))
+        viewpoint_cam = viewpoint_stack.pop(randint(0, len(viewpoint_stack)-1)) 
 
         with torch.no_grad():        
             if network_gui.conn == None:
@@ -88,23 +86,31 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
         bg = torch.rand((3), device="cuda") if opt.random_background else background
         render_pkg = render(viewpoint_cam, gaussians, pipe, bg)
-        image, depth, alpha, viewspace_point_tensor, visibility_filter = render_pkg["render"], render_pkg["mean_depth"], render_pkg["alpha"], render_pkg["viewspace_points"], render_pkg["visibility_filter"]
+        image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
+
+
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
-        Lssim = (1.0 - ssim(image, gt_image))
+        Lssim = (1.0 - ms_ssim_loss(image, gt_image))
         lambda_dssim = iteration / opt.iterations
+        lambda_dssim = 1.
         
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
-        loss = Lrgb            
-        if iteration > opt.smooth_iter:
-            Lentropy = entropy_loss(alpha)
-            loss += Lentropy
-            Lnormal = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
-            # Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
-            loss += 0.01*Lnormal
+        # Lrgb = (1.0 - ms_ssim_loss(image, gt_image)) if iteration > opt.atom_densification_until else l1_loss(image, gt_image)
+        loss = Lrgb
+        # loss += 0.1*l1_loss(torch.max(gaussians.get_scaling, dim=1).values/torch.min(gaussians.get_scaling, dim=1).values, 1.)
+        
+        if iteration < opt.atom_densification_until:
+            Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
+            loss += Lnormal
+
+        # Ldepth = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
+        # loss += Ldepth
 
         loss.backward()
+        # print(viewspace_point_tensor.grad[visibility_filter,:2])
+        # raise
 
         iter_end.record()
 
@@ -124,23 +130,24 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 scene.save(iteration)
 
             # Densification
-            if iteration < opt.smooth_iter:
-                gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
+            # if iteration < opt.atom_densification_until:
+            gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
+            gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-                    if iteration < opt.warm_up_until:
-                        warm = (iteration / opt.warm_up_until)**2
-                        gaussians.densify_and_prune(opt.densify_grad_threshold * warm, opt.prune_opacity_threshold * warm)
-                    else:
-                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.prune_opacity_threshold)
+            if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
+                if iteration < opt.atom_densification_until:
+                    warm = (iteration/opt.atom_densification_until)**2
+                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold*warm, opt.prune_opacity_threshold)
+                else:
+                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold, opt.prune_opacity_threshold, 10)
 
-                if  iteration % opt.densification_interval == 0 and iteration < opt.scale_decay_until:
-                    gaussians.reset_scaling(scale_decay)
-                
-                if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)) and iteration < opt.smooth_iter:
-                    gaussians.reset_opacity()
+            if  iteration % opt.densification_interval == 0 and iteration < opt.atom_densification_until:
+                gaussians.reset_scaling()
+            
+            if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)):
+                gaussians.reset_opacity()
 
-            # if iteration == opt.smooth_iter:
+            # if iteration == opt.atom_densification_until:
             #     for param_group in gaussians.optimizer.param_groups:
             #         if param_group["name"] == "scaling":
             #             param_group['lr'] = 0.005
@@ -218,8 +225,8 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int, default=6009)
     parser.add_argument('--debug_from', type=int, default=-1)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
-    parser.add_argument("--test_iterations", nargs="+", type=int, default=[x*500 for x in range(16)])
-    parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000])
+    parser.add_argument("--test_iterations", nargs="+", type=int, default=[7_000, 30_000])
+    parser.add_argument("--save_iterations", nargs="+", type=int, default=[7_000, 30_000])
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--checkpoint_iterations", nargs="+", type=int, default=[])
     parser.add_argument("--start_checkpoint", type=str, default = None)
