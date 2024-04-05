@@ -93,8 +93,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
         Lssim = (1.0 - ms_ssim_loss(image, gt_image))
-        lambda_dssim = iteration / opt.iterations
-        lambda_dssim = 1.
+        # lambda_dssim = iteration / opt.iterations
+        lambda_dssim = 0.1
         
         Lrgb =  (1.0 - lambda_dssim) * Ll1 + lambda_dssim * Lssim 
         # Lrgb = (1.0 - ms_ssim_loss(image, gt_image)) if iteration > opt.atom_densification_until else l1_loss(image, gt_image)
@@ -103,7 +103,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         
         if iteration < opt.atom_densification_until:
             Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
-            loss += Lnormal
+            loss += 0.1*Lnormal
 
         # Ldepth = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
         # loss += Ldepth
@@ -137,9 +137,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
                 if iteration < opt.atom_densification_until:
                     warm = (iteration/opt.atom_densification_until)**2
-                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold*warm, opt.prune_opacity_threshold)
+                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold*warm, opt.prune_opacity_threshold*warm)
                 else:
-                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold, opt.prune_opacity_threshold, 10)
+                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold, opt.prune_opacity_threshold, 100)
 
             if  iteration % opt.densification_interval == 0 and iteration < opt.atom_densification_until:
                 gaussians.reset_scaling()

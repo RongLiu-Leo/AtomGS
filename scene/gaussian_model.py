@@ -133,6 +133,8 @@ class GaussianModel:
         dist = torch.sqrt(torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001))
         self.atom_scale = torch.quantile(dist, torch.tensor([0.01]).cuda()).item()
         dist[dist<self.atom_scale] = self.atom_scale
+        # self.atom_scale = 0.01 * self.spatial_lr_scale
+        # dist = torch.ones((fused_point_cloud.shape[0]), device="cuda") * self.atom_scale
         scales = torch.log(dist)[...,None].repeat(1, 3)
 
         rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
@@ -386,8 +388,8 @@ class GaussianModel:
         grads[grads.isnan()] = 0.0
         grads = torch.norm(grads, dim=-1)
 
-        split_mask = self.max_radii2D > max_2D
-        self.split_points(split_mask)
+        # split_mask = self.max_radii2D > max_2D
+        # self.split_points(split_mask)
 
         padded_grad = torch.zeros((self.get_xyz.shape[0]), device="cuda")
         padded_grad[:grads.shape[0]] = grads.squeeze()
