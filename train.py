@@ -130,27 +130,22 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                 scene.save(iteration)
 
             # Densification
-            # if iteration < opt.atom_densification_until:
-            gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
-            gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
+            if iteration < opt.densify_until_iter:
+                gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
+                gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
-            if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
-                if iteration < opt.atom_densification_until:
-                    warm = (iteration/opt.atom_densification_until)**2
-                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold*warm, opt.prune_opacity_threshold*warm)
-                else:
-                    gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold, opt.prune_opacity_threshold, 100)
+                if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
+                    if iteration < opt.atom_densification_until:
+                        warm = (iteration/opt.atom_densification_until)**1
+                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold*warm, opt.prune_opacity_threshold)
+                    else:
+                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold, opt.prune_opacity_threshold, 100)
 
-            if  iteration % opt.densification_interval == 0 and iteration < opt.atom_densification_until:
-                gaussians.reset_scaling()
-            
-            if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)):
-                gaussians.reset_opacity()
-
-            # if iteration == opt.atom_densification_until:
-            #     for param_group in gaussians.optimizer.param_groups:
-            #         if param_group["name"] == "scaling":
-            #             param_group['lr'] = 0.005
+                if  iteration % opt.densification_interval == 0 and iteration < opt.atom_densification_until:
+                    gaussians.reset_scaling()
+                
+                if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)):
+                    gaussians.reset_opacity()
             
             # Optimizer step
             if iteration < opt.iterations:

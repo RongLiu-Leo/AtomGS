@@ -51,7 +51,7 @@ class ModelParams(ParamGroup):
         self._model_path = ""
         self._images = "images"
         self._resolution = -1
-        self._white_background = True
+        self._white_background = False
         self.data_device = "cuda"
         self.eval = False
         super().__init__(parser, "Loading Parameters", sentinel)
@@ -72,7 +72,7 @@ class OptimizationParams(ParamGroup):
     def __init__(self, parser):
         self.iterations = 30000
         self.position_lr_init = 0.00016
-        self.position_lr_final = 0.000016
+        self.position_lr_final = 0.0000016
         self.position_lr_delay_mult = 0.01
         self.position_lr_max_steps = 7000
         self.feature_lr = 0.0025
@@ -84,9 +84,10 @@ class OptimizationParams(ParamGroup):
         self.densify_from_iter = 100
         self.opacity_reset_interval = 300
 
-        self.atom_densification_until = 2000
+        self.atom_densification_until = 7000
+        self.densify_until_iter = 15_000
 
-        self.prune_opacity_threshold = 0.1
+        self.prune_opacity_threshold = 0.005
         self.densify_grad_threshold = 0.0002
         self.random_background = False
         super().__init__(parser, "Optimization Parameters")
