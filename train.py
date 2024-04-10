@@ -76,14 +76,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         Ll1 = l1_loss(image, gt_image)
         Lssim = (1.0 - ms_ssim_loss(image, gt_image))
         
-        Lrgb =  (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * Lssim 
+        Lrgb =  (1.0 - opt.lambda_ssim) * Ll1 + opt.lambda_ssim * Lssim 
         # Lrgb = (1.0 - ms_ssim_loss(image, gt_image)) if iteration > opt.atom_densification_until else l1_loss(image, gt_image)
         loss = Lrgb
         # loss += 0.1*l1_loss(torch.max(gaussians.get_scaling, dim=1).values/torch.min(gaussians.get_scaling, dim=1).values, 1.)
         
         # if iteration < opt.atom_densification_until:
         Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
-        loss += 0.1*Lnormal
+        loss += opt.lambda_normal*Lnormal
 
         # Ldepth = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
         # loss += Ldepth
@@ -156,7 +156,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     if do_training and ((iteration < int(opt.iterations)) or not keep_alive):
                         break
                 except Exception as e:
-                    raise e
+                    # raise e
                     network_gui.conn = None
 
 def prepare_output_and_logger(args):    
