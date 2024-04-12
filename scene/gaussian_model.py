@@ -120,7 +120,7 @@ class GaussianModel:
         if self.active_sh_degree < self.max_sh_degree:
             self.active_sh_degree += 1
 
-    def create_from_pcd(self, pcd : BasicPointCloud, spatial_lr_scale : float):
+    def create_from_pcd(self, pcd : BasicPointCloud, spatial_lr_scale : float, atom_init_quantile : float):
         self.spatial_lr_scale = spatial_lr_scale
         fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
         fused_color = RGB2SH(torch.tensor(np.asarray(pcd.colors)).float().cuda())
@@ -131,7 +131,7 @@ class GaussianModel:
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
 
         dist = torch.sqrt(torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001))
-        self.atom_scale = torch.quantile(dist, torch.tensor([0.01]).cuda()).item()
+        self.atom_scale = torch.quantile(dist, torch.tensor([atom_init_quantile]).cuda()).item()
         dist[dist<self.atom_scale] = self.atom_scale
         # self.atom_scale = 0.01 * self.spatial_lr_scale
         # dist = torch.ones((fused_point_cloud.shape[0]), device="cuda") * self.atom_scale
@@ -220,6 +220,8 @@ class GaussianModel:
         scaling_new = torch.log(dist)
         optimizable_tensors = self.replace_tensor_to_optimizer(scaling_new, "scaling")
         self._scaling = optimizable_tensors["scaling"]
+
+        self.atom_scale*=0.99
 
     def load_ply(self, path):
         plydata = PlyData.read(path)

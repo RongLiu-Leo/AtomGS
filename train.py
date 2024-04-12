@@ -81,9 +81,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         loss = Lrgb
         # loss += 0.1*l1_loss(torch.max(gaussians.get_scaling, dim=1).values/torch.min(gaussians.get_scaling, dim=1).values, 1.)
         
-        # if iteration < opt.atom_densification_until:
-        Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
-        loss += opt.lambda_normal*Lnormal
+        if iteration < opt.atom_densification_until:
+            Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
+            loss += opt.lambda_normal*Lnormal
 
         # Ldepth = edge_aware_depth_loss(gt_image, render_pkg["mean_depth"])
         # loss += Ldepth
