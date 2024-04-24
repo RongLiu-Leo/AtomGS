@@ -111,7 +111,6 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
             # Densification
             if iteration < opt.densify_until_iter:
-                gaussians.max_radii2D[visibility_filter] = torch.max(gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
                 gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
 
                 if iteration > opt.densify_from_iter and iteration % opt.densification_interval == 0:
@@ -119,7 +118,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         warm = (iteration/opt.atom_densification_until)**1
                         gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold*warm, opt.prune_opacity_threshold)
                     else:
-                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold, opt.prune_opacity_threshold, 100)
+                        gaussians.densify_and_prune(opt.densify_grad_threshold, opt.densify_grad_threshold, opt.prune_opacity_threshold)
 
                 if  iteration % opt.densification_interval == 0 and iteration < opt.atom_densification_until:
                     gaussians.reset_scaling()

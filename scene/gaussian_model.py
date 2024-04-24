@@ -50,7 +50,6 @@ class GaussianModel:
         self._scaling = torch.empty(0)
         self._rotation = torch.empty(0)
         self._opacity = torch.empty(0)
-        self.max_radii2D = torch.empty(0)
         self.xyz_gradient_accum = torch.empty(0)
         self.denom = torch.empty(0)
         self.optimizer = None
@@ -66,7 +65,6 @@ class GaussianModel:
             self._scaling,
             self._rotation,
             self._opacity,
-            self.max_radii2D,
             self.xyz_gradient_accum,
             self.denom,
             self.optimizer.state_dict(),
@@ -81,7 +79,6 @@ class GaussianModel:
         self._scaling, 
         self._rotation, 
         self._opacity,
-        self.max_radii2D, 
         xyz_gradient_accum, 
         denom,
         opt_dict, 
@@ -148,7 +145,6 @@ class GaussianModel:
         self._scaling = nn.Parameter(scales.requires_grad_(True))
         self._rotation = nn.Parameter(rots.requires_grad_(True))
         self._opacity = nn.Parameter(opacities.requires_grad_(True))
-        self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
 
     def training_setup(self, training_args):
         self.xyz_gradient_accum = torch.zeros((self.get_xyz.shape[0], 1), device="cuda")
@@ -222,6 +218,7 @@ class GaussianModel:
         self._scaling = optimizable_tensors["scaling"]
 
         self.atom_scale*=0.99
+        dist[atom_mask]*=0.99
 
     def load_ply(self, path):
         plydata = PlyData.read(path)
@@ -313,7 +310,6 @@ class GaussianModel:
         self.xyz_gradient_accum = self.xyz_gradient_accum[valid_points_mask]
 
         self.denom = self.denom[valid_points_mask]
-        self.max_radii2D = self.max_radii2D[valid_points_mask]
 
     def cat_tensors_to_optimizer(self, tensors_dict):
         optimizable_tensors = {}
@@ -355,7 +351,6 @@ class GaussianModel:
 
         self.xyz_gradient_accum = torch.zeros((self.get_xyz.shape[0], 1), device="cuda")
         self.denom = torch.zeros((self.get_xyz.shape[0], 1), device="cuda")
-        self.max_radii2D = torch.zeros((self.get_xyz.shape[0]), device="cuda")
 
     def clone_points(self, clone_mask):
         new_xyz = self._xyz[clone_mask]
@@ -385,17 +380,14 @@ class GaussianModel:
         prune_filter = torch.cat((selected_pts_mask, torch.zeros(N * selected_pts_mask.sum(), device="cuda", dtype=bool)))
         self.prune_points(prune_filter)
 
-    def densify_and_prune(self, clone_grad, split_grad, min_opacity, max_2D=1e8):
+    def densify_and_prune(self, clone_grad, split_grad, min_opacity):
         grads = self.xyz_gradient_accum / self.denom
         grads[grads.isnan()] = 0.0
         grads = torch.norm(grads, dim=-1)
 
-        # split_mask = self.max_radii2D > max_2D
-        # self.split_points(split_mask)
-
         padded_grad = torch.zeros((self.get_xyz.shape[0]), device="cuda")
         padded_grad[:grads.shape[0]] = grads.squeeze()
-        split_mask = padded_grad >= split_grad
+        split_mask = torch.logical_and(padded_grad >= split_grad, torch.max(self.get_scaling, dim=1).values > self.atom_scale)
         self.split_points(split_mask)
         
 
