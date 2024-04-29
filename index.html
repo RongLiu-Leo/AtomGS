@@ -27,7 +27,6 @@
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
-  <script src="./static/js/index.js"></script>
 </head>
 <body>
 
@@ -107,40 +106,49 @@
   </div>
 </section>
 
-<div class="container">
-  <ul class="nav nav-tabs nav-fill nav-justified" id="object-scale-recon">
-      <li class="nav-item">
-        <a class="nav-link" onclick="objectSceneEvent(0)">bicycle</a>
+<section class="section">
+  <div class="container is-max-desktop">
+    <ul class="nav nav-tabs nav-fill nav-justified" id="object-scale-recon">
+        <li class="nav-item">
+          <a class="nav-link active" onclick="objectSceneEvent(0)">bicycle</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(1)">kitchen</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(2)">stump</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(3)">flowers</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(4)">garden</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(5)">kitchen</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(6)">stump</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(7)">treehill</a>
+        </li>
+    </ul>
+    <div class="b-dics">
+        <img src="static/images/bicycle/rgb/gs.png" alt="3D GS">
+        <img src="static/images/bicycle/rgb/ours.png" alt="AtomGS (Ours)">
+        <img src="static/images/bicycle/rgb/sugar.png" alt="SuGaR">
+    </div>
+    <ul class="nav nav-tabs nav-fill nav-justified" id="object-rgb-normal" style="border-width: 0px 0px 1px 0px;">
+      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
+        <a class="nav-link active" style="border-radius: 0px 0px 10px 10px;" onclick="rgbNormalEvent(0)">RGB</a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link active" onclick="objectSceneEvent(1)">bonsai</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" onclick="objectSceneEvent(2)">counter</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" onclick="objectSceneEvent(3)">flowers</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" onclick="objectSceneEvent(4)">garden</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" onclick="objectSceneEvent(5)">kitchen</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" onclick="objectSceneEvent(6)">stump</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" onclick="objectSceneEvent(7)">treehill</a>
+      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
+        <a class="nav-link" style="border-radius: 0px 0px 10px 10px;" onclick="rgbNormalEvent(1)">Normal</a>
       </li>
   </ul>
-  <div class="b-dics" style="width: 1000px; font-weight: 600;">
-      <img src="static/images/bicycle/GT.png" alt="GT">
-      <img src="static/images/bicycle/Ours.png" alt="AtomGS (Ours)">
-      <img src="static/images/bicycle/GS.png" alt="3D GS">
-      <img src="static/images/bicycle/Sugar.png" alt="SuGaR">
   </div>
-</div>
+</section>
 
 <!-- 
 <section class="hero is-light is-small">
