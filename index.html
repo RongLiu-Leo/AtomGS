@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="description"
-        content="Gaussian Splatting Studio">
-  <meta name="keywords" content="Gaussian Splatting, GS Studio">
+        content="AtomGS">
+  <meta name="keywords" content="Gaussian Splatting, AtomGS">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gaussian Splatting Studio</title>
-
+  <title>AtomGS: Atomizing Gaussian Splatting for High-Fidelity Radiance Field</title>
+  <link rel="stylesheet" href="./static/css/bootstrap-4.4.1.css">
 
   <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
         rel="stylesheet">
@@ -20,7 +20,9 @@
         href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="./static/css/index.css">
   <link rel="icon" href="./static/images/favicon.svg">
-
+  <link rel="stylesheet" href="./static/css/dics.original.css">
+  <script src="./static/js/event_handler.js"></script>
+  <script src="./static/js/dics.original.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/bulma-carousel.min.js"></script>
@@ -34,25 +36,25 @@
     <div class="container is-max-desktop">
       <div class="columns is-centered">
         <div class="column has-text-centered">
-          <h1 class="title is-1 publication-title">Gaussian Splatting Studio</h1>
+          <h1 class="title is-1 publication-title">AtomGS: Atomizing Gaussian Splatting for High-Fidelity Radiance Field</h1>
           <div class="is-size-5 publication-authors">
             <span class="author-block">
-              <a href="https://rongliu-leo.github.io/">Rong Liu</a><sup>1,2</sup>,</span>
-            <span class="author-block">
-              <a href="">Shuyang Zhang</a><sup>1</sup>,</span>
-            <span class="author-block">
-              <a href="">Ning Nie</a><sup>1</sup>,
+              <a href="https://rongliu-leo.github.io/">Rong Liu</a>&nbsp;&nbsp;&nbsp;&nbsp;
             </span>
             <span class="author-block">
-              <a href="">Zhiyuan Gao</a><sup>1,2</sup>,</span>
+              <a href="">Rui Xu</a>&nbsp;&nbsp;&nbsp;&nbsp;</span>
             <span class="author-block">
-              <a href="https://scholar.google.com/citations?user=JKWxGfsAAAAJ&hl=en">Andrew Feng</a><sup>2</sup>,
+              <a href="">Yue Hu</a>&nbsp;&nbsp;&nbsp;&nbsp;
+            </span>
+            <span class="author-block">
+              <a href="">Meida Chen</a>&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <span class="author-block">
+              <a href="https://scholar.google.com/citations?user=JKWxGfsAAAAJ&hl=en">Andrew Feng</a>
             </span>
           </div>
 
           <div class="is-size-5 publication-authors">
-            <span class="author-block" style="color:#990000;"><sup>1</sup>University of Southern California,</span>
-            <span class="author-block" style="color:#990000;"><sup>2</sup>USC Institute for Creative Technologies</span>
+            <span class="author-block" style="color:#990000;">University of Southern California<br>Institute for Creative Technologies</span>
           </div>
 
           <div class="column has-text-centered">
@@ -105,19 +107,40 @@
   </div>
 </section>
 
-<section class="hero teaser">
-  <div class="container is-max-desktop">
-    <div class="hero-body">
-      <video id="teaser" autoplay muted loop playsinline height="100%">
-        <source src="./static/videos/teaser.mp4"
-                type="video/mp4">
-      </video>
-      <h2 class="subtitle has-text-centered">
-        <span class="dnerf">Gaussian Splatting Studio</span> knows better about your GS models
-      </h2>
-    </div>
+<div class="container">
+  <ul class="nav nav-tabs nav-fill nav-justified" id="object-scale-recon">
+      <li class="nav-item">
+        <a class="nav-link" onclick="objectSceneEvent(0)">bicycle</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link active" onclick="objectSceneEvent(1)">bonsai</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" onclick="objectSceneEvent(2)">counter</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" onclick="objectSceneEvent(3)">flowers</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" onclick="objectSceneEvent(4)">garden</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" onclick="objectSceneEvent(5)">kitchen</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" onclick="objectSceneEvent(6)">stump</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" onclick="objectSceneEvent(7)">treehill</a>
+      </li>
+  </ul>
+  <div class="b-dics" style="width: 1000px; font-weight: 600;">
+      <img src="static/images/bicycle/GT.png" alt="GT">
+      <img src="static/images/bicycle/Ours.png" alt="AtomGS (Ours)">
+      <img src="static/images/bicycle/GS.png" alt="3D GS">
+      <img src="static/images/bicycle/Sugar.png" alt="SuGaR">
   </div>
-</section>
+</div>
 
 <!-- 
 <section class="hero is-light is-small">
