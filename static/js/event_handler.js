@@ -32,14 +32,25 @@ document.addEventListener('DOMContentLoaded', domReady);
                         image.src = parts.join('/')
                         break;
                     case 2:
-                        image.src = 'static/images/stump/';
+                        parts[parts.length-2] = 'stump'
+                        image.src = parts.join('/')
                         break;
                     case 3:
-                        image.src = 'static/images/garden/';
+                        parts[parts.length-2] = 'flowers'
+                        image.src = parts.join('/')
                         break;
                     case 4:
-                        image.src = 'static/images/truck/';
-                        break;   
+                        parts[parts.length-2] = 'garden'
+                        image.src = parts.join('/')
+                        break; 
+                    case 5:
+                        parts[parts.length-2] = 'train'
+                        image.src = parts.join('/')
+                        break;
+                    case 6:
+                        parts[parts.length-2] = 'truck'
+                        image.src = parts.join('/')
+                        break; 
                 }
                 switch (i) {
                     case 0:
