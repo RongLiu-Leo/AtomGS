@@ -119,27 +119,35 @@ document.addEventListener('DOMContentLoaded', domReady);
                         image.src = parts.join('/')
                         break;
                     case 1:
-                        parts[parts.length-2] = 'kitchen'
-                        image.src = parts.join('/')
-                        break;
-                    case 2:
-                        parts[parts.length-2] = 'stump'
-                        image.src = parts.join('/')
-                        break;
-                    case 3:
                         parts[parts.length-2] = 'flowers'
                         image.src = parts.join('/')
                         break;
-                    case 4:
+                    case 2:
                         parts[parts.length-2] = 'garden'
+                        image.src = parts.join('/')
+                        break;
+                    case 3:
+                        parts[parts.length-2] = 'stump'
+                        image.src = parts.join('/')
+                        break;
+                    case 4:
+                        parts[parts.length-2] = 'treehill'
                         image.src = parts.join('/')
                         break; 
                     case 5:
-                        parts[parts.length-2] = 'train'
+                        parts[parts.length-2] = 'room'
                         image.src = parts.join('/')
                         break;
                     case 6:
-                        parts[parts.length-2] = 'truck'
+                        parts[parts.length-2] = 'counter'
+                        image.src = parts.join('/')
+                        break;
+                    case 7:
+                        parts[parts.length-2] = 'kitchen'
+                        image.src = parts.join('/')
+                        break; 
+                    case 8:
+                        parts[parts.length-2] = 'bonsai'
                         image.src = parts.join('/')
                         break; 
                 }
