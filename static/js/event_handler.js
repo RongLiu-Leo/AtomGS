@@ -106,6 +106,63 @@ document.addEventListener('DOMContentLoaded', domReady);
             }
         }
 
+        function densifyEvent(idx) {
+            let dics = document.querySelectorAll('.b-dics.densify')[0]
+            let sections = dics.getElementsByClassName('b-dics__section')
+            let imagesLength = 2
+            for (let i = 0; i < imagesLength; i++) {
+                let image = sections[i].getElementsByClassName('b-dics__image-container')[0].getElementsByClassName('b-dics__image')[0]
+                let parts = image.src.split('/').slice(0, -1);
+                switch (idx) {
+                    case 0:
+                        parts[parts.length-2] = 'bicycle'
+                        image.src = parts.join('/')
+                        break;
+                    case 1:
+                        parts[parts.length-2] = 'kitchen'
+                        image.src = parts.join('/')
+                        break;
+                    case 2:
+                        parts[parts.length-2] = 'stump'
+                        image.src = parts.join('/')
+                        break;
+                    case 3:
+                        parts[parts.length-2] = 'flowers'
+                        image.src = parts.join('/')
+                        break;
+                    case 4:
+                        parts[parts.length-2] = 'garden'
+                        image.src = parts.join('/')
+                        break; 
+                    case 5:
+                        parts[parts.length-2] = 'train'
+                        image.src = parts.join('/')
+                        break;
+                    case 6:
+                        parts[parts.length-2] = 'truck'
+                        image.src = parts.join('/')
+                        break; 
+                }
+                switch (i) {
+                    case 0:
+                        image.src = image.src + '/gs.gif';
+                        break;
+                    case 1:
+                        image.src = image.src + '/ours.gif';
+                        break;
+                }
+            }
+
+            let scene_list = document.getElementById("densify").children;
+            for (let i = 0; i < scene_list.length; i++) {
+                if (idx == i) {
+                    scene_list[i].children[0].className = "nav-link active"
+                }
+                else {
+                    scene_list[i].children[0].className = "nav-link"
+                }
+            }
+        }
         function shrunkenFullEvent(idx) {
             let dics = document.querySelectorAll('.b-dics.densify')[0]
             let sections = dics.getElementsByClassName('b-dics__section')
