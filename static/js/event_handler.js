@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', domReady);
                 }
             }
 
-            let scene_list = document.getElementById("densify-shrunken-full").children;
+            let scene_list = document.getElementById("densify").children;
             for (let i = 0; i < scene_list.length; i++) {
                 if (idx == i) {
                     scene_list[i].children[0].className = "nav-link active"
@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', domReady);
         function shrunkenFullEvent(idx) {
             let dics = document.querySelectorAll('.b-dics.densify')[0]
             let sections = dics.getElementsByClassName('b-dics__section')
-            let imagesLength = 3
+            let imagesLength = 2
             for (let i = 0; i < imagesLength; i++) {
                 let image = sections[i].getElementsByClassName('b-dics__image-container')[0].getElementsByClassName('b-dics__image')[0]
                 let parts = image.src.split('/');
@@ -181,7 +181,6 @@ document.addEventListener('DOMContentLoaded', domReady);
                         break;
                 }
             }
-
             let scene_list = document.getElementById("densify-shrunken-full").children;
             for (let i = 0; i < scene_list.length; i++) {
                 if (idx == i) {
