@@ -85,11 +85,11 @@ document.addEventListener('DOMContentLoaded', domReady);
                 let parts = image.src.split('/');
                 switch (idx) {
                     case 0:
-                        parts[parts.length-2] = 'rgb'
+                        parts[parts.length-2] = 'normal'
                         image.src = parts.join('/')
                         break;
                     case 1:
-                        parts[parts.length-2] = 'normal'
+                        parts[parts.length-2] = 'rgb'
                         image.src = parts.join('/')
                         break;
                 }

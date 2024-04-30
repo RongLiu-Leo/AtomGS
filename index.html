@@ -176,6 +176,47 @@
 
 <section class="section">
   <div class="container is-max-desktop">
+    <ul class="nav nav-tabs nav-fill nav-justified" id="object-scale-recon">
+        <li class="nav-item">
+          <a class="nav-link active" onclick="objectSceneEvent(0)">bicycle</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(1)">kitchen</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(2)">stump</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(3)">flowers</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(4)">garden</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(5)">train</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" onclick="objectSceneEvent(6)">truck</a>
+        </li>
+    </ul>
+    <div class="b-dics object">
+        <img src="static/images/bicycle/normal/gs.png" alt="3D GS">
+        <img src="static/images/bicycle/normal/ours.png" alt="AtomGS (Ours)">
+        <img src="static/images/bicycle/normal/sugar.png" alt="SuGaR">
+    </div>
+    <ul class="nav nav-tabs nav-fill nav-justified" id="object-rgb-normal" style="border-width: 0px 0px 1px 0px;">
+      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
+        <a class="nav-link active" style="border-radius: 0px 0px 10px 10px;" onclick="rgbNormalEvent(0)">Normal</a>
+      </li>
+      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
+        <a class="nav-link" style="border-radius: 0px 0px 10px 10px;" onclick="rgbNormalEvent(1)">RGB</a>
+      </li>
+  </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
     <ul class="nav nav-tabs nav-fill nav-justified" id="densify">
         <li class="nav-item">
           <a class="nav-link active" onclick="densifyEvent(0)">bicycle</a>
@@ -211,46 +252,7 @@
   </div>
 </section>
 
-<section class="section">
-  <div class="container is-max-desktop">
-    <ul class="nav nav-tabs nav-fill nav-justified" id="object-scale-recon">
-        <li class="nav-item">
-          <a class="nav-link active" onclick="objectSceneEvent(0)">bicycle</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="objectSceneEvent(1)">kitchen</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="objectSceneEvent(2)">stump</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="objectSceneEvent(3)">flowers</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="objectSceneEvent(4)">garden</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="objectSceneEvent(5)">train</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="objectSceneEvent(6)">truck</a>
-        </li>
-    </ul>
-    <div class="b-dics object">
-        <img src="static/images/bicycle/rgb/gs.png" alt="3D GS">
-        <img src="static/images/bicycle/rgb/ours.png" alt="AtomGS (Ours)">
-        <img src="static/images/bicycle/rgb/sugar.png" alt="SuGaR">
-    </div>
-    <ul class="nav nav-tabs nav-fill nav-justified" id="object-rgb-normal" style="border-width: 0px 0px 1px 0px;">
-      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
-        <a class="nav-link active" style="border-radius: 0px 0px 10px 10px;" onclick="rgbNormalEvent(0)">RGB</a>
-      </li>
-      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
-        <a class="nav-link" style="border-radius: 0px 0px 10px 10px;" onclick="rgbNormalEvent(1)">Normal</a>
-      </li>
-  </ul>
-  </div>
-</section>
+
 
 <!-- 
 <section class="hero is-light is-small">
