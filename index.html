@@ -7,10 +7,6 @@
   <meta name="keywords" content="Gaussian Splatting, AtomGS">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AtomGS: Atomizing Gaussian Splatting for High-Fidelity Radiance Field</title>
-  <link rel="preload" href="static/videos/bicycle/shrunken/gs.gif" as="image">
-  <link rel="preload" href="static/videos/bicycle/shrunken/ours.gif" as="image">
-  <link rel="preload" href="static/videos/bicycle/full/gs.gif" as="image">
-  <link rel="preload" href="static/videos/bicycle/full/ours.gif" as="image">
 
   <link rel="stylesheet" href="./static/css/bootstrap-4.4.1.css">
 
@@ -24,7 +20,7 @@
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
   <link rel="stylesheet" href="./static/css/index.css">
-  <link rel="icon" href="./static/images/favicon.svg">
+  <!-- <link rel="icon" href="./static/images/favicon.svg"> -->
   <link rel="stylesheet" href="./static/css/dics.original.css">
   <script src="./static/js/event_handler.js"></script>
   <script src="./static/js/dics.original.js"></script>
@@ -32,6 +28,73 @@
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
+  <link rel="preload" href="static/images/bicycle/normal/gs.png", as="image">
+  <link rel="preload" href="static/images/bicycle/normal/ours.png", as="image">
+  <link rel="preload" href="static/images/bicycle/normal/sugar.png", as="image">
+  <link rel="preload" href="static/images/bicycle/rgb/gs.png", as="image">
+  <link rel="preload" href="static/images/bicycle/rgb/ours.png", as="image">
+  <link rel="preload" href="static/images/bicycle/rgb/sugar.png", as="image">
+  <link rel="preload" href="static/images/flowers/normal/gs.png", as="image">
+  <link rel="preload" href="static/images/flowers/normal/ours.png", as="image">
+  <link rel="preload" href="static/images/flowers/normal/sugar.png", as="image">
+  <link rel="preload" href="static/images/flowers/rgb/gs.png", as="image">
+  <link rel="preload" href="static/images/flowers/rgb/ours.png", as="image">
+  <link rel="preload" href="static/images/flowers/rgb/sugar.png", as="image">
+  <link rel="preload" href="static/images/truck/normal/gs.png", as="image">
+  <link rel="preload" href="static/images/truck/normal/ours.png", as="image">
+  <link rel="preload" href="static/images/truck/normal/sugar.png", as="image">
+  <link rel="preload" href="static/images/truck/rgb/gs.png", as="image">
+  <link rel="preload" href="static/images/truck/rgb/ours.png", as="image">
+  <link rel="preload" href="static/images/truck/rgb/sugar.png", as="image">
+  <link rel="preload" href="static/images/garden/normal/gs.png", as="image">
+  <link rel="preload" href="static/images/garden/normal/ours.png", as="image">
+  <link rel="preload" href="static/images/garden/normal/sugar.png", as="image">
+  <link rel="preload" href="static/images/garden/rgb/gs.png", as="image">
+  <link rel="preload" href="static/images/garden/rgb/ours.png", as="image">
+  <link rel="preload" href="static/images/garden/rgb/sugar.png", as="image">
+  <link rel="preload" href="static/images/kitchen/normal/gs.png", as="image">
+  <link rel="preload" href="static/images/kitchen/normal/ours.png", as="image">
+  <link rel="preload" href="static/images/kitchen/normal/sugar.png", as="image">
+  <link rel="preload" href="static/images/kitchen/rgb/gs.png", as="image">
+  <link rel="preload" href="static/images/kitchen/rgb/ours.png", as="image">
+  <link rel="preload" href="static/images/kitchen/rgb/sugar.png", as="image">
+  <link rel="preload" href="static/images/stump/normal/gs.png", as="image">
+  <link rel="preload" href="static/images/stump/normal/ours.png", as="image">
+  <link rel="preload" href="static/images/stump/normal/sugar.png", as="image">
+  <link rel="preload" href="static/images/stump/rgb/gs.png", as="image">
+  <link rel="preload" href="static/images/stump/rgb/ours.png", as="image">
+  <link rel="preload" href="static/images/stump/rgb/sugar.png", as="image">
+  <link rel="preload" href="static/images/train/normal/gs.png", as="image">
+  <link rel="preload" href="static/images/train/normal/ours.png", as="image">
+  <link rel="preload" href="static/images/train/normal/sugar.png", as="image">
+  <link rel="preload" href="static/images/train/rgb/gs.png", as="image">
+  <link rel="preload" href="static/images/train/rgb/ours.png", as="image">
+  <link rel="preload" href="static/images/train/rgb/sugar.png", as="image">
+
+  <link rel="preload" href="static/videos/bicycle/full/gs.gif", as="image">
+  <link rel="preload" href="static/videos/bicycle/full/ours.gif", as="image">
+  <link rel="preload" href="static/videos/bicycle/shrunken/gs.gif", as="image">
+  <link rel="preload" href="static/videos/bicycle/shrunken/ours.gif", as="image">
+  <link rel="preload" href="static/videos/flowers/full/gs.gif", as="image">
+  <link rel="preload" href="static/videos/flowers/full/ours.gif", as="image">
+  <link rel="preload" href="static/videos/flowers/shrunken/gs.gif", as="image">
+  <link rel="preload" href="static/videos/flowers/shrunken/ours.gif", as="image">
+  <link rel="preload" href="static/videos/garden/full/gs.gif", as="image">
+  <link rel="preload" href="static/videos/garden/full/ours.gif", as="image">
+  <link rel="preload" href="static/videos/garden/shrunken/gs.gif", as="image">
+  <link rel="preload" href="static/videos/garden/shrunken/ours.gif", as="image">
+  <link rel="preload" href="static/videos/counter/full/gs.gif", as="image">
+  <link rel="preload" href="static/videos/counter/full/ours.gif", as="image">
+  <link rel="preload" href="static/videos/counter/shrunken/gs.gif", as="image">
+  <link rel="preload" href="static/videos/counter/shrunken/ours.gif", as="image">
+  <link rel="preload" href="static/videos/stump/full/gs.gif", as="image">
+  <link rel="preload" href="static/videos/stump/full/ours.gif", as="image">
+  <link rel="preload" href="static/videos/stump/shrunken/gs.gif", as="image">
+  <link rel="preload" href="static/videos/stump/shrunken/ours.gif", as="image">
+  <link rel="preload" href="static/videos/room/full/gs.gif", as="image">
+  <link rel="preload" href="static/videos/room/full/ours.gif", as="image">
+  <link rel="preload" href="static/videos/room/shrunken/gs.gif", as="image">
+  <link rel="preload" href="static/videos/room/shrunken/ours.gif", as="image">
 </head>
 <body>
 
@@ -127,19 +190,10 @@
           <a class="nav-link" onclick="densifyEvent(3)">stump</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(4)">treehill</a>
+          <a class="nav-link" onclick="densifyEvent(4)">room</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(5)">room</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(6)">counter</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(7)">kitchen</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(8)">bonsai</a>
+          <a class="nav-link" onclick="densifyEvent(5)">counter</a>
         </li>
     </ul>
     <div class="b-dics densify">

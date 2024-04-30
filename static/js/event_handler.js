@@ -131,25 +131,13 @@ document.addEventListener('DOMContentLoaded', domReady);
                         image.src = parts.join('/')
                         break;
                     case 4:
-                        parts[parts.length-2] = 'treehill'
-                        image.src = parts.join('/')
-                        break; 
-                    case 5:
                         parts[parts.length-2] = 'room'
                         image.src = parts.join('/')
                         break;
-                    case 6:
+                    case 5:
                         parts[parts.length-2] = 'counter'
                         image.src = parts.join('/')
                         break;
-                    case 7:
-                        parts[parts.length-2] = 'kitchen'
-                        image.src = parts.join('/')
-                        break; 
-                    case 8:
-                        parts[parts.length-2] = 'bonsai'
-                        image.src = parts.join('/')
-                        break; 
                 }
                 switch (i) {
                     case 0:
