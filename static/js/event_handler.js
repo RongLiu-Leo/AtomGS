@@ -123,18 +123,14 @@ document.addEventListener('DOMContentLoaded', domReady);
                         image.src = parts.join('/')
                         break;
                     case 2:
-                        parts[parts.length-2] = 'garden'
-                        image.src = parts.join('/')
-                        break;
-                    case 3:
                         parts[parts.length-2] = 'stump'
                         image.src = parts.join('/')
                         break;
-                    case 4:
+                    case 3:
                         parts[parts.length-2] = 'room'
                         image.src = parts.join('/')
                         break;
-                    case 5:
+                    case 4:
                         parts[parts.length-2] = 'counter'
                         image.src = parts.join('/')
                         break;
