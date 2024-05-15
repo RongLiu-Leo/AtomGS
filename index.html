@@ -211,6 +211,11 @@
 <section class="section">
   <div class="container is-max-desktop">
     <h2 class="title is-3 is-centered has-text-centered" style="margin-top: -20px">Atomized Proliferation</h2>
+    <div class="content has-text-justified">
+      <p style="margin-top: 30px">
+        When handling input SfM points, 3DGS alternates between densification and optimization to enhance scene representation. In contrast, our method initially constrains Gaussians that represent fine details into Atom Gaussians and prioritizes their proliferation to quickly align with the scene's inherent geometry.
+      </p>
+    </div>
     <ul class="nav nav-tabs nav-fill nav-justified" id="densify">
         <li class="nav-item">
           <a class="nav-link active" onclick="densifyEvent(0)">bicycle</a>
@@ -242,8 +247,7 @@
   </ul>
   <div class="content has-text-justified">
     <p style="margin-top: 30px">
-      When handling input SfM points, 3DGS alternates between densification and optimization to enhance scene representation. In contrast, our method initially constrains Gaussians that represent fine details into Atom Gaussians and prioritizes their proliferation to quickly align with the scene's inherent geometry.
-    </p>
+      Rendering Comparison of 7k Results: 3DGS vs. Ours. We display images using both full-size and shrunken Gaussians, examining the rendering effects and Gaussian placements. Our approach results in more precise geometric alignments, visible in fine details like bicycle spokes and blades of grass.    </p>
   </div>
   </div>
 </section>
@@ -254,16 +258,17 @@
     <div class="columns is-centered has-text-centered">
       <div class="column is-full-width">
         <h2 class="title is-3" style="margin-top: -20px">Edge-Aware Normal Loss</h2>
-
+        <div class="content has-text-justified">
+          <p style="margin-top: 30px">
+            We first compute the normal map for a radiance field's geometry using cross products of depth map gradients. Next, we derive the curvature map to show changes in surface normals, where higher values indicate rough textures and lower values mean smoother surfaces. However, optimizing this map can overly smooth details like sharp edges.
+            To prevent this, we create an edge map from the RGB image's gradient magnitude. This helps preserve detailed features by preventing excessive smoothing in the curvature map, thus maintaining important geometric details.          </p>
+        </div>
         <img src="./static/images/loss.png" class="center">
         <div class="content has-text-justified">
           <p style="margin-top: 30px">
-            We first compute the normal map, which epresents the surface orientations derived from a radiance field's geometry. This map is calculated from an unprojected depth map using the cross product of the depth map's gradients. Next, the curvature map is derived, representing the rate of change in the surface normals. Areas with higher values on this map suggest greater variability in surface orientations, while lower values indicate smoother surfaces. Although optimizing the curvature map can enhance geometric smoothness, it may also result in the loss of high-frequency details such as sharp edges or fine structures, leading to an overly smooth appearance.
-            To address this, an edge map derived from the gradient magnitude of the ground truth RGB image is also computed. This edge map aids in preserving high-frequency details by preventing these areas from being smoothed in the curvature map, thus maintaining essential geometric features on flat surfaces.   
-            <br>The illustration normal map is rendered from the 3DGS 30k result. Based on that, we can compute the normal loss map, showing the areas that our proposed loss could optimize.        
+            The illustration normal map is rendered from the 3DGS 30k result. Based on that, we can compute the normal loss map, showing the areas that our proposed loss could optimize.        
           </p>
         </div>
-
       </div>
     </div>
   </div>
