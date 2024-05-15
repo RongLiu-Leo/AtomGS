@@ -13,6 +13,12 @@ document.addEventListener('DOMContentLoaded', domReady);
                 textPosition: "bottom"
 
             });
+            new Dics({
+                container: document.querySelectorAll('.b-dics')[2],
+                hideTexts: false,
+                textPosition: "bottom"
+
+            });
         }
 
         function objectSceneEvent(idx) {
@@ -67,6 +73,63 @@ document.addEventListener('DOMContentLoaded', domReady);
             }
 
             let scene_list = document.getElementById("object-scale-recon").children;
+            for (let i = 0; i < scene_list.length; i++) {
+                if (idx == i) {
+                    scene_list[i].children[0].className = "nav-link active"
+                }
+                else {
+                    scene_list[i].children[0].className = "nav-link"
+                }
+            }
+        }
+        function meshSceneEvent(idx) {
+            let dics = document.querySelectorAll('.b-dics.mesh')[0]
+            let sections = dics.getElementsByClassName('b-dics__section')
+            let imagesLength = 3
+            for (let i = 0; i < imagesLength; i++) {
+                let image = sections[i].getElementsByClassName('b-dics__image-container')[0].getElementsByClassName('b-dics__image')[0]
+                let parts = image.src.split('/').slice(0, -1);
+                switch (idx) {
+                    case 0:
+                        parts[parts.length-1] = 'hotdog'
+                        image.src = parts.join('/')
+                        break;
+                    case 1:
+                        parts[parts.length-1] = 'lego'
+                        image.src = parts.join('/')
+                        break;
+                    case 2:
+                        parts[parts.length-1] = 'chair'
+                        image.src = parts.join('/')
+                        break;
+                    case 3:
+                        parts[parts.length-1] = 'dtu24'
+                        image.src = parts.join('/')
+                        break;
+                    case 4:
+                        parts[parts.length-1] = 'dtu106'
+                        image.src = parts.join('/')
+                        break; 
+                    case 5:
+                        parts[parts.length-1] = 'dtu122'
+                        image.src = parts.join('/')
+                        break;
+                }
+                switch (i) {
+                    case 0:
+                        image.src = image.src + '/sugar.png';
+                        break;
+                    case 1:
+                        image.src = image.src + '/ours.png';
+                        break;
+                    case 2:
+                        image.src = image.src + '/neus.png';
+                        break;
+
+                }
+            }
+
+            let scene_list = document.getElementById("mesh-recon").children;
             for (let i = 0; i < scene_list.length; i++) {
                 if (idx == i) {
                     scene_list[i].children[0].className = "nav-link active"
