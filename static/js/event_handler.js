@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', domReady);
                 let parts = image.src.split('/').slice(0, -1);
                 switch (idx) {
                     case 0:
-                        parts[parts.length-1] = 'hotdog'
+                        parts[parts.length-1] = 'chair'
                         image.src = parts.join('/')
                         break;
                     case 1:
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', domReady);
                         image.src = parts.join('/')
                         break;
                     case 2:
-                        parts[parts.length-1] = 'chair'
+                        parts[parts.length-1] = 'hotdog'
                         image.src = parts.join('/')
                         break;
                     case 3:
