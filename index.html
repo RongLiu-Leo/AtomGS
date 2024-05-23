@@ -28,28 +28,7 @@
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.min.js" integrity="sha384-9fV78+3WxQ4t5hy6YhKZahRbHwIZyDu3Dk5nH48VcDx+7/2ym1E2iQgyUU4pz3iV" crossorigin="anonymous"></script>
-  
-  <link rel="preload" href="static/videos/bicycle/full/gs.gif", as="image">
-  <link rel="preload" href="static/videos/bicycle/full/ours.gif", as="image">
-  <link rel="preload" href="static/videos/bicycle/shrunken/gs.gif", as="image">
-  <link rel="preload" href="static/videos/bicycle/shrunken/ours.gif", as="image">
-  <link rel="preload" href="static/videos/flowers/full/gs.gif", as="image">
-  <link rel="preload" href="static/videos/flowers/full/ours.gif", as="image">
-  <link rel="preload" href="static/videos/flowers/shrunken/gs.gif", as="image">
-  <link rel="preload" href="static/videos/flowers/shrunken/ours.gif", as="image">
-  <link rel="preload" href="static/videos/counter/full/gs.gif", as="image">
-  <link rel="preload" href="static/videos/counter/full/ours.gif", as="image">
-  <link rel="preload" href="static/videos/counter/shrunken/gs.gif", as="image">
-  <link rel="preload" href="static/videos/counter/shrunken/ours.gif", as="image">
-  <link rel="preload" href="static/videos/stump/full/gs.gif", as="image">
-  <link rel="preload" href="static/videos/stump/full/ours.gif", as="image">
-  <link rel="preload" href="static/videos/stump/shrunken/gs.gif", as="image">
-  <link rel="preload" href="static/videos/stump/shrunken/ours.gif", as="image">
-  <link rel="preload" href="static/videos/room/full/gs.gif", as="image">
-  <link rel="preload" href="static/videos/room/full/ours.gif", as="image">
-  <link rel="preload" href="static/videos/room/shrunken/gs.gif", as="image">
-  <link rel="preload" href="static/videos/room/shrunken/ours.gif", as="image">
+  <script src="./static/js/index.js"></script>
 
   <link rel="preload" href="static/images/bicycle/normal/gs.png", as="image">
   <link rel="preload" href="static/images/bicycle/normal/ours.png", as="image">
@@ -138,23 +117,25 @@
           </div>
 
           <div class="is-size-5 publication-authors">
-            <span class="author-block" style="color:#990000;">University of Southern California<br>Institute for Creative Technologies</span>
+            <span class="author-block" style="color:#990000;">
+              <a href="https://ict.usc.edu/" style="color:#990000;">University of Southern California<br>Institute for Creative Technologies</a>
+            </span>
           </div>
 
           <div class="column has-text-centered">
             <div class="publication-links">
               <!-- PDF Link. -->
-              <!-- <span class="link-block">
-                <a href="https://arxiv.org/pdf/2011.12948"
+              <span class="link-block">
+                <a href="https://arxiv.org/pdf/2405.12369"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fas fa-file-pdf"></i>
                   </span>
                   <span>Paper</span>
                 </a>
-              </span> -->
+              </span>
               <span class="link-block">
-                <a href=""
+                <a href="https://arxiv.org/abs/2405.12369"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="ai ai-arxiv"></i>
@@ -232,39 +213,29 @@
         When handling input SfM points, 3DGS alternates between densification and optimization to enhance scene representation. In contrast, our method initially constrains Gaussians that represent fine details into Atom Gaussians and prioritizes their proliferation to quickly align with the scene's inherent geometry.
       </p>
     </div>
-    <ul class="nav nav-tabs nav-fill nav-justified" id="densify">
-        <li class="nav-item">
-          <a class="nav-link active" onclick="densifyEvent(0)">bicycle</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(1)">flowers</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(2)">stump</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(3)">room</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" onclick="densifyEvent(4)">counter</a>
-        </li>
+    <ul class="nav nav-tabs nav-fill nav-justified" id="densify-shrunken-full">
+      <li class="nav-item">
+        <a class="nav-link active" onclick="shrunkenFullEvent(0)">Shrunken</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" onclick="shrunkenFullEvent(1)">Full Size</a>
+      </li>
     </ul>
-    <div class="b-dics densify">
-        <img src="static/videos/bicycle/shrunken/gs.gif" alt="3D GS">
-        <img src="static/videos/bicycle/shrunken/ours.gif" alt="AtomGS (Ours)">
+    <div class="columns is-vcentered">
+      <div class="column interpolation-video-column">
+        <div id="interpolation-image-wrapper" class="b-dics densify">
+          <img id="image-ours" src="./static/interpolation/ours/shrunken/00010.png" alt="AtomGS (Ours)">
+          <img id="image-gs" src="./static/interpolation/gs/shrunken/00010.png" alt="3DGS">
+        </div>
+        <div class="has-text-centered">
+          <input class="slider is-fullwidth is-large is-info is-danger" id="interpolation-slider" step="1" min="0" max="200" value="0" type="range" style="color: #990000;" oninput="this.nextElementSibling.textContent = 'Iteration: ' + (this.value * 10 + 10)">
+          <p style=" display: flex;
+          justify-content: center;
+          align-items: center;">Iteration: 10</p>
+        </div>
+
+      </div>
     </div>
-    <ul class="nav nav-tabs nav-fill nav-justified" id="densify-shrunken-full" style="border-width: 0px 0px 1px 0px;">
-      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
-        <a class="nav-link active" style="border-radius: 0px 0px 10px 10px;" onclick="shrunkenFullEvent(0)">Shrunken</a>
-      </li>
-      <li class="nav-item" style="border-radius: 0px 0px 10px 10px;">
-        <a class="nav-link" style="border-radius: 0px 0px 10px 10px;" onclick="shrunkenFullEvent(1)">Full Size</a>
-      </li>
-  </ul>
-  <div class="content has-text-justified">
-    <p style="margin-top: 30px">
-      Rendering Comparison of 7k Results: 3DGS vs. Ours. We display images using both full-size and shrunken Gaussians, examining the rendering effects and Gaussian placements. Our approach results in more precise geometric alignments, visible in fine details like bicycle spokes and blades of grass.    </p>
-  </div>
   </div>
 </section>
 <section class="section">
@@ -276,13 +247,14 @@
         <h2 class="title is-3" style="margin-top: -20px">Edge-Aware Normal Loss</h2>
         <div class="content has-text-justified">
           <p style="margin-top: 30px">
-            We first compute the normal map for a radiance field's geometry using cross products of depth map gradients. Next, we derive the curvature map to show changes in surface normals, where higher values indicate rough textures and lower values mean smoother surfaces. However, optimizing this map can overly smooth details like sharp edges.
-            To prevent this, we create an edge map from the RGB image's gradient magnitude. This helps preserve detailed features by preventing excessive smoothing in the curvature map, thus maintaining important geometric details.          </p>
+            We first compute the normal map using cross products of depth map gradients. Next, we derive the curvature map to show changes in surface normals, where higher values indicate rough textures and lower values mean smoother surfaces. However, optimizing this map can overly smooth details like sharp edges.
+            To prevent this, we create an edge map from the RGB image's gradient magnitude. This helps preserve detailed features by preventing excessive smoothing in the curvature map, thus maintaining important geometric details.
+            The illustration normal map is rendered from the 3DGS 30k result. Based on that, we can compute the normal loss map, showing the areas that our proposed loss could optimize.
+          </p>   
         </div>
         <img src="./static/images/loss.png" class="center">
         <div class="content has-text-justified">
           <p style="margin-top: 30px">
-            The illustration normal map is rendered from the 3DGS 30k result. Based on that, we can compute the normal loss map, showing the areas that our proposed loss could optimize.        
           </p>
         </div>
       </div>
@@ -317,7 +289,7 @@
         </li>
     </ul>
     <div class="b-dics object">
-        <img src="static/images/bicycle/normal/gs.png" alt="3D GS">
+        <img src="static/images/bicycle/normal/gs.png" alt="3DGS">
         <img src="static/images/bicycle/normal/ours.png" alt="AtomGS (Ours)">
         <img src="static/images/bicycle/normal/sugar.png" alt="SuGaR">
     </div>
@@ -365,17 +337,22 @@
 
 
 
-<!-- <section class="section" id="BibTeX">
+<section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
-    <pre><code>@article{park2021nerfies,
-  author    = {Park, Keunhong and Sinha, Utkarsh and Barron, Jonathan T. and Bouaziz, Sofien and Goldman, Dan B and Seitz, Steven M. and Martin-Brualla, Ricardo},
-  title     = {Nerfies: Deformable Neural Radiance Fields},
-  journal   = {ICCV},
-  year      = {2021},
-}</code></pre>
+    <pre><code>
+      @misc{liu2024atomgs,
+        title={AtomGS: Atomizing Gaussian Splatting for High-Fidelity Radiance Field}, 
+        author={Rong Liu and Rui Xu and Yue Hu and Meida Chen and Andrew Feng},
+        year={2024},
+        eprint={2405.12369},
+        archivePrefix={arXiv},
+        primaryClass={cs.CV},
+        url={https://rongliu-leo.github.io/AtomGS/}
+  }
+</code></pre>
   </div>
-</section> -->
+</section>
 
 
 <footer class="footer">
