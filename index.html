@@ -224,8 +224,8 @@
     <div class="columns is-vcentered">
       <div class="column interpolation-video-column">
         <div id="interpolation-image-wrapper" class="b-dics densify">
-          <img id="image-ours" src="./static/interpolation/ours/shrunken/00010.png" alt="AtomGS (Ours)">
           <img id="image-gs" src="./static/interpolation/gs/shrunken/00010.png" alt="3DGS">
+          <img id="image-ours" src="./static/interpolation/ours/shrunken/00010.png" alt="AtomGS (Ours)">
         </div>
         <div class="has-text-centered">
           <input class="slider is-fullwidth is-large is-info is-danger" id="interpolation-slider" step="1" min="0" max="200" value="0" type="range" style="color: #990000;" oninput="this.nextElementSibling.textContent = 'Iteration: ' + (this.value * 10 + 10)">
