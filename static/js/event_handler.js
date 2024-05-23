@@ -50,10 +50,6 @@ document.addEventListener('DOMContentLoaded', domReady);
                         image.src = parts.join('/')
                         break; 
                     case 5:
-                        parts[parts.length-2] = 'train'
-                        image.src = parts.join('/')
-                        break;
-                    case 6:
                         parts[parts.length-2] = 'truck'
                         image.src = parts.join('/')
                         break; 
