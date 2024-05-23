@@ -206,7 +206,7 @@
       <p style="margin-top: 30px">
         When handling input SfM points, 3DGS alternates between densification and optimization to enhance scene representation. In contrast, our method initially constrains Gaussians that represent fine details into Atom Gaussians and prioritizes their proliferation to quickly align with the scene's inherent geometry.
       </p>
-      <p>Drag the slider to play with proliferation!</p>
+      <p>Drag the slider to play with proliferation! Also drag the comparison bar to see comparisons</p>
     </div>
     <div class="has-text-centered">
       <input class="slider is-fullwidth is-large is-info is-danger" id="interpolation-slider" step="1" min="0" max="200" value="0" type="range" style="color: #990000; margin-top: 0px;margin-bottom: 0px;" oninput="this.nextElementSibling.textContent = 'Iteration: ' + (this.value * 10 + 10)">
