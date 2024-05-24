@@ -155,3 +155,7 @@ If you find our code or paper helps, please consider giving us a star or citing:
     url={https://rongliu-leo.github.io/AtomGS/}
 }
 ```
+
+## License
+
+This project is licensed under the Gaussian-Splatting License - see the [LICENSE](LICENSE) file for details.
