@@ -208,7 +208,7 @@ class GaussianModel:
         optimizable_tensors = self.replace_tensor_to_optimizer(opacities_new, "opacity")
         self._opacity = optimizable_tensors["opacity"]
     
-    def reset_scaling(self):
+    def atomize(self):
         dist = self.get_scaling
         atom_mask = torch.min(self.get_scaling, dim=1).values <= self.atom_scale
         dist[atom_mask] = self.atom_scale
@@ -216,7 +216,7 @@ class GaussianModel:
         scaling_new = torch.log(dist)
         optimizable_tensors = self.replace_tensor_to_optimizer(scaling_new, "scaling")
         self._scaling = optimizable_tensors["scaling"]
-
+        # geometric progression ensures the atom scale will be optimized into 1/2 at 7k iteration
         self.atom_scale*=0.99
         dist[atom_mask]*=0.99
 

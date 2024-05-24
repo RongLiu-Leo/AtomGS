@@ -109,7 +109,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                         gaussians.densify_and_prune(opt.clone_threshold, min(opt.split_threshold*iteration/opt.warm_up_until, opt.split_threshold), opt.prune_threshold)
 
                 if  iteration % opt.densification_interval == 0 and iteration < opt.atom_proliferation_until:
-                    gaussians.reset_scaling()
+                    gaussians.atomize()
                 
                 if (iteration % opt.opacity_reset_interval == 0 or (dataset.white_background and iteration == opt.densify_from_iter)):
                     gaussians.reset_opacity()
