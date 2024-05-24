@@ -73,9 +73,9 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
         Ll1 = l1_loss(image, gt_image)
-        Lssim = (1.0 - ms_ssim(image, gt_image))
+        L_ms_ssim = (1.0 - ms_ssim(image, gt_image))
         
-        Lrgb =  (1.0 - opt.lambda_ssim) * Ll1 + opt.lambda_ssim * Lssim 
+        Lrgb =  (1.0 - opt.lambda_ms_ssim) * Ll1 + opt.lambda_ms_ssim * L_ms_ssim 
         loss = Lrgb
         
         if iteration < opt.atom_proliferation_until:
