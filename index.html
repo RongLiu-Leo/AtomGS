@@ -206,7 +206,7 @@
       <p style="margin-top: 30px">
         When handling input SfM points, 3DGS alternates between densification and optimization to enhance scene representation. In contrast, our method initially constrains Gaussians that represent fine details into Atom Gaussians and prioritizes their proliferation to quickly align with the scene's inherent geometry.
       </p>
-      <p>Drag the slider to play with proliferation! Also drag the comparison bar to see comparisons</p>
+      <p>Drag the slider to play with proliferation! Also drag the comparison bar to see differences.</p>
     </div>
     <div class="has-text-centered">
       <input class="slider is-fullwidth is-large is-info is-danger" id="interpolation-slider" step="1" min="0" max="200" value="0" type="range" style="color: #990000; margin-top: 0px;margin-bottom: 0px;" oninput="this.nextElementSibling.textContent = 'Iteration: ' + (this.value * 10 + 10)">
@@ -326,8 +326,39 @@
   </div>
 </section>
 
+<section class="section"></section>
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Related Links</h2>
 
+        <div class="content has-text-justified">
+          <p>
+              <b>Introducing SDF into NeRF:</b><br>
+              <a href="https://lingjie0206.github.io/papers/NeuS/">NeuS: Learning Neural Implicit Surfaces by Volume Rendering for Multi-view Reconstruction</a><br>
+              <a href="https://vcai.mpi-inf.mpg.de/projects/NeuS2/">NeuS2: Fast Learning of Neural Implicit Surfaces for Multi-view Reconstruction</a><br>
+              <a href="https://research.nvidia.com/labs/dir/neuralangelo/">Neuralangelo: High-Fidelity Neural Surface Reconstruction</a><br>
+          </p>
 
+          <p>
+              <b>Representing radiance field via 2D Gaussian Surfel:</b><br>
+              <a href="https://anttwo.github.io/sugar/">SuGaR: Surface-Aligned Gaussian Splatting for Efficient 3D Mesh Reconstruction and High-Quality Mesh Rendering</a><br>
+              <a href="https://github.com/hbb1/2d-gaussian-splatting">2D Gaussian Splatting for Geometrically Accurate Radiance Fields</a><br>
+              <a href="https://turandai.github.io/projects/gaussian_surfels/">High-quality Surface Reconstruction using Gaussian Surfels</a><br>
+          </p>
+
+          <p>
+              <b>Addressing 3DGS cloudy artifacts:</b><br>
+              <a href="https://ty424.github.io/AbsGS.github.io/">AbsGS: Recovering Fine Details for 3D Gaussian Splatting</a><br>
+              <a href="https://lfranke.github.io/trips/">TRIPS: Trilinear Point Splatting for Real-Time Radiance Field Rendering</a><br>
+              <a href="https://arxiv.org/abs/2404.06109">Revising Densification in Gaussian Splatting</a><br>
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
