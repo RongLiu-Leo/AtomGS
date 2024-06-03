@@ -72,7 +72,7 @@ python train.py -s <path to COLMAP or NeRF Synthetic dataset> --scaling_lr 0 --i
   Iteration where Atom Proliferation stops.
   #### --warm_up_until
   Iteration where warm-up strategy stops.
-  #### --lambda_ssim
+  #### --lambda_ms_ssim
   Influence of MS-SSIM Loss.
   #### --lambda_normal
   Influence of Edge-Aware Normal Loss.
