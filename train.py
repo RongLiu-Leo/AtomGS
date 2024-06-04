@@ -12,7 +12,7 @@
 import os
 import torch
 from random import randint
-from utils.loss_utils import l1_loss, edge_aware_depth_loss, ms_ssim
+from utils.loss_utils import l1_loss, edge_aware_normal_loss, ms_ssim
 from gaussian_renderer import render, network_gui
 import sys
 from scene import Scene, GaussianModel
@@ -79,7 +79,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         loss = Lrgb
         
         if iteration < opt.atom_proliferation_until:
-            Lnormal = edge_aware_depth_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
+            Lnormal = edge_aware_normal_loss(gt_image, depth_to_normal(render_pkg["mean_depth"], viewpoint_cam).permute(2,0,1))
             loss += opt.lambda_normal*Lnormal
 
         loss.backward()
