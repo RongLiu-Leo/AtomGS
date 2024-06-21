@@ -158,4 +158,4 @@ If you find our code or paper helps, please consider giving us a star or citing:
 
 ## License
 
-This project is licensed under the Gaussian-Splatting License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Gaussian-Splatting License - see the [LICENSE](LICENSE.md) file for details.
